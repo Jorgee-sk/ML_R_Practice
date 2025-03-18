@@ -1,0 +1,230 @@
+---
+title: "Práctica 5: Regresión Logística (GLM)"
+author: "Jorge Galiano García"
+format:
+  html:
+    theme: [default, style.scss]
+    toc: true
+    toc-location: left
+    toc-title: Indice
+    toc-depth: 5
+    fig-cap-location: margin
+editor: visual
+---
+
+## Práctica
+
+### Librerías
+
+```{r}
+#| message: false
+#| warning: false
+# Borramos variables del environment
+rm(list = ls())
+# Paquetes (si no están instalados, install.packages())
+library(skimr) # resumen numérico
+library(corrplot) # visualizar correlaciones
+library(ggthemes) # temas para tunear gráficas
+library(tidymodels) # depuración datos
+library(tidyverse) # modelos
+library(lubridate) # fechas
+library(car) # herramientas regresión
+library(themis) # oversampling
+library(glue) # pegar texto + variables fácilmente
+library(performance) # evaluación y diagnosis modelos
+library(tibble)   # tibble
+library(DT)   # Mostrar df
+library(olsrr)
+library(caret) 
+```
+
+### Descarga del conjunto de datos
+
+Para descargar el conjunto de datos se utiliza el enlace del fichero en el apartado de variables.
+
+```{r}
+#| message: false
+#| warning: false
+challenger_data <- read_tsv("https://raw.githubusercontent.com/egarpor/handy/master/datasets/challenger.txt")
+```
+
+Se va a estudiar la probabilidad de accidente en función de únicamente la temperatura por tanto solo vamos a necesitar estas dos variables en nuestro conjunto de datos:
+
+```{r}
+#| message: false
+#| warning: false
+challenger_data <- challenger_data |> select(temp, fail.field) |> mutate(accident = as.factor(fail.field))|> select(-fail.field)
+```
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+challenger_data |> 
+  mutate(accident = ifelse(accident == "1", "Sí", "No")) |> 
+  ggplot(aes(x = factor(temp), fill = accident)) +
+  geom_bar(position = "stack") +
+  scale_fill_manual(values = c("#03bb85", "#ff0000")) +
+  theme_minimal() +
+  labs(x = "Temperatura (°C)",
+       y = "Número de lanzamientos",
+       fill = "¿Accidente?") +
+  theme(axis.title.x = element_text(size = 15, face = "bold"),
+        axis.title.y = element_text(size = 10, face = "bold"),
+        axis.text.x = element_text(size = 9, angle = 45, hjust = 1),
+        axis.text.y = element_text(size = 12),
+        legend.position = "bottom")
+
+```
+
+### Modelo
+
+-   **Receta**
+
+```{r}
+#| message: false
+#| warning: false
+lanz_rec <-  recipe(data = challenger_data, accident ~ .) 
+```
+
+-   **Modelo**
+
+```{r}
+#| message: false
+#| warning: false
+log_reg <- logistic_reg() |> set_engine("glm")
+```
+
+-   **Flujo**
+
+```{r}
+#| message: false
+#| warning: false
+lanz_flow <- workflow() |> add_model(log_reg) |> add_recipe(lanz_rec)
+```
+
+-   **Ajuste**
+
+```{r}
+#| message: false
+#| warning: false
+lanz_fit <- lanz_flow |> fit(data = challenger_data)
+```
+
+-   **Predicciones y odds**
+
+```{r}
+#| message: false
+#| warning: false
+predicciones <- augment(lanz_fit, new_data = challenger_data) |> mutate(odds = .pred_1 / .pred_0, log.odds = log(odds))
+```
+
+-   **Ecuación**
+
+```{r}
+lanz_fit |> extract_fit_engine() |> coef()
+```
+
+La probabilidad de accidente queda estimada como:
+
+$$\hat{\eta} = 7.5837433 -0.4166465x, \quad \hat{p} = \hat{P}(Y=1 | X=x) = \frac{1}{1 + e^{-(7.5837433 -0.4166465 x)}}$$
+
+Si observamos los coeficientes con exponencial:
+
+```{r}
+#| message: false
+#| warning: false
+exp(coef(lanz_fit |> extract_fit_engine()))
+```
+
+-   $e^{\hat{\beta_{0}}}=1965.9743$ Si la temperatura fuera de 0°C, hay un 196597.43592% mas de probabilidad de tener accidente
+
+-   En cuanto al coeficiente de la temperatura, implica que por cada °C que aumenta la temperatura, la probabilidad de que se produzca un accidente se reduce un $1-0.6592539\rightarrow 34.07\%$
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+# Ploteado
+ggplot(predicciones, aes(x = temp, y = .pred_1,
+                         color = factor(accident, labels = c("No", "Sí")),
+                         shape = factor(.pred_class, labels = c("No", "Sí")))) +
+geom_point(size = 5) +
+scale_color_manual(values = c("#03bb85","#ff8097"))+
+labs(x = "Temperatura", y = "Probabilidad de accidente",
+     color = "Realidad", shape = "Predicción",
+     title = "Ajuste de la regresión logística")+
+theme_minimal()+
+theme(axis.title.y = element_blank(),
+      axis.title.x = element_text(size =15, face = "bold"),
+      axis.text.x = element_text(size =9),
+      axis.text.y = element_text(size =12, face = "bold"),
+      plot.title = element_text(size =20, face = "bold"),
+      legend.position = "bottom")
+```
+
+### Probabilidad de accidente
+
+Se calcula la probabilidad de accidente ese día con la temperatura de -0.6°C:
+
+$$
+\hat{p} = \hat{P}(Y=1 | X=x) = \frac{1}{1 + e^{-(7.5837433 -0.4166465 x)}}\hspace{0.5cm}\xrightarrow{-0.6°C}\hspace{0.5cm}\frac{1}{1 + e^{-(7.5837433 -0.4166465[-0.6])}}=0.999
+$$
+
+### Metricas de la regresión logística
+
+#### Matriz de confusión
+
+```{r}
+conf_mat <- confusionMatrix(predicciones$.pred_class, 
+                             challenger_data$accident, positive = "1")
+conf_mat
+```
+
+#### Accuracy
+
+```{r}
+accuracy_value <- conf_mat[["overall"]][["Accuracy"]]
+
+accuracy_value
+```
+
+#### Sensitivity
+
+```{r}
+sensitivity_value <- conf_mat[["byClass"]][["Sensitivity"]]
+
+sensitivity_value
+```
+
+#### Specificity
+
+```{r}
+specificity_value <- conf_mat[["byClass"]][["Specificity"]]
+
+specificity_value
+```
+
+#### Curva ROC y AUC
+
+```{r}
+roc_curve <- predicciones |> roc_curve(truth = accident, .pred_0)
+
+auc <- predicciones |>  roc_auc(truth = accident, .pred_0)
+auc <- auc %>% pull(.estimate)
+
+ggplot(roc_curve, aes(x = 1 - specificity, y = sensitivity)) +
+geom_line(lwd = 1, alpha = 0.85, color = "#e01b63") +
+geom_abline(lty = "dashed") +
+coord_equal() +
+labs(x = "1 - Specificity",
+     y = "Sensitivity",
+     title = "CURVA ROC",
+     subtitle = glue("AUC = {round(auc, 3)}"))+
+theme_minimal()+
+theme(axis.title.y = element_text(face="bold"),
+      axis.title.x = element_text(face="bold"),
+      plot.title = element_text(size=15,face="bold"),
+      plot.subtitle = element_text(size=10))
+```

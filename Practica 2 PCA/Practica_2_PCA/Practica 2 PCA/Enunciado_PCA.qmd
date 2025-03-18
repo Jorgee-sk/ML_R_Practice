@@ -1,0 +1,484 @@
+---
+title: "Practica PCA"
+author: "Jorge Galiano García"
+format:
+  html:
+    theme: [default, style.scss]
+    toc: true
+    toc-location: left
+    toc-title: indice
+    toc-depth: 5
+    fig-cap-location: margin
+editor: visual
+---
+
+# Principal Component Analysis
+
+Librerías necesarias:
+
+```{r}
+#| message: false
+#| warning: false
+rm(list = ls())
+# Manejo de datos
+library(tidyverse)
+# Importar Excel
+library(readxl)
+# Recopilarción de temas, escalas y utilidades adicionales de ggplot2
+library(hrbrthemes)
+# Mostrar tablas en HTML (datatable)
+library(DT)
+# Combinar gráficos
+library(gridExtra)
+# PCA
+library(FactoMineR)
+library(factoextra)
+# Correlacion
+library(corrplot)
+# Modelos
+library(tidymodels)
+# Para grafico de Correlacion CP vs X
+library(hrbrthemes)
+library(GGally)
+library(viridis)
+```
+
+## Ejercicio 1
+
+> El conjunto de datos `euro_contam` está compuesto por 14 variables de carácter socio económico y relacionadas con las emisiones de CO2 para 27 países de la Unión Europea (observaciones). Para reducir el número de variables e intentar encontrar relaciones, tanto entre variables como entre países, realizar los siguientes apartados.
+
+-   **Realizar un análisis de componentes principales sobre la matriz de correlaciones.**
+    -   **Obtén los autovalores y autovectores**
+    -   **¿Con cuantas componentes nos quedaríamos? (al menos un 75% de la varianza total explicada)**
+
+En primer lugar se van a visualizar en una tabla los datos del dataset obtenido a partir del excel
+
+```{r}
+#| message: false
+#| warning: false
+#| 
+euro_contam <- read_excel("./data/euro_contam.xlsx")
+
+euro_contam_tibble <- as_tibble(euro_contam)
+
+datatable(euro_contam_tibble , rownames = FALSE, filter = "top",
+          options = list(pageLength = 10)) |>
+          formatStyle(names(euro_contam_tibble), lineHeight = "100%")
+```
+
+Como podemos observar existen variables que no aportan información numérica relevante para el análisis de componentes principales, estas son el ID y el País.
+
+Se van a estandarizar los datos pero sin tener en cuenta estas variables. Aun así se va a conservar en los datos resultantes el nombre del país por su posible utilidad en visualizaciones de datos posteriores.
+
+```{r}
+#| message: false
+#| warning: false
+
+euro_contam_std <- tibble("País" = euro_contam_tibble$Pais,
+                          as_tibble(scale(euro_contam_tibble[, 3:16])))
+```
+
+Con los datos estandarizados y sin tener en cuenta la variable del nombre del país se puede efectuar el calculo de la matriz de correlación
+
+```{r}
+euro_cont_cor_mat <- cor(euro_contam_std[, 2:15])
+euro_cont_cor_mat
+```
+
+🎂🎂 Aquí se pueden visualizar las correlaciones de las diferentes variables 🎂🎂:
+
+```{r}
+corrplot(euro_cont_cor_mat, 
+         type = 'lower', 
+         method = 'pie',
+         order = 'AOE', 
+         tl.col = "black")
+
+```
+
+Ahora de verdad...
+
+```{r}
+corrplot(type = 'lower',
+         number.cex = 0.7, 
+         method = 'number', 
+         euro_cont_cor_mat, 
+         order = 'AOE', 
+         tl.col = "black")
+```
+
+Una vez obtenida la matriz de correlación se pueden realizar los calculos de autovalores y autovectores. Para ello en primer lugar aplicaremos el PCA a los datos estandarizados y visualizaremos los Autovalores:
+
+```{r}
+#| message: false
+#| warning: false
+
+pca_fit <- PCA(euro_contam_std[, 2:15], scale.unit = TRUE, ncp = 14, graph = FALSE)
+
+pca_fit$eig
+```
+
+Cada autovalor que se ha calculado indica la cantidad de varianza total que es capturada por su componente principal correspondiente. Para verlo de forma más clara se calcula la siguiente gráfica:
+
+```{r}
+#| message: false
+#| warning: false
+
+fviz_eig(pca_fit, 
+         addlabels = TRUE,
+         barfill = "#f4dda7",                       
+         xlab = "Componentes",                       
+         ylab = "% de varianza explicada",          
+         main = "Varianza explicada por componentes")
+```
+
+Con este gráfico se podría visualizar también cuantos componentes surgen cumpliendo con el requisito del 75% de la varianza total explicada. Con 4 componentes alcanzamos un 76.06% de varianza total explicada por lo que escogeremos los primeros 4 componentes.
+
+Observamos el peso de las variables originales en los 4 nuevos componentes principales.
+
+```{r}
+#| message: false
+#| warning: false
+
+pca_fit$var$coord[, 1:4]
+
+```
+
+Para el calculo de los autovectores se utiliza también la aplicación del PCA a nuestros datos estandarizados que nos generará un objeto donde encontraremos los autovectores:
+
+```{r}
+#| message: false
+#| warning: false
+
+original_vars <- names(euro_contam_std[2:15])
+
+auto_vec <- tibble(original_vars, as_tibble(pca_fit$svd$V[, 1:4]))
+
+auto_vec
+
+```
+
+Por tanto los 4 nuevos componentes quedan expresados de la siguiente forma:
+
+$$
+\begin{multline*}
+\Phi_{1} = 
+0.425897105 \times \text{CO2\_Agri} 
++ 0.323481483 \times \text{CO2\_Min}\\  
++ 0.445648014	 \times \text{CO2\_Transp} 
++ 0.448961525 \times \text{CO2\_Domestico}\\ 
+- 0.027534920	\times \text{Transporte carretera} 
++ 0.029352470 \times \text{Renta\_P\_C}\\    
+- 0.159128051	\times \text{I\_Produc\_M}
++ 0.449901004 \times \text{Pob\_T}\\   
+- 0.004219013	 \times \text{T\_Desemp} 
+- 0.095495484 \times \text{Mort\_Inf}\\    
++ 0.080188861 \times \text{Edad Media} 
+- 0.227421252 \times \text{Dif\_Edad\_G}\\
+- 0.010968751	 \times \text{Tasa\_Nac}
+- 0.130545828 \times \text{T\_Mort}
+\end{multline*}
+$$
+
+$$
+\begin{multline*}
+\Phi_{2} = 
+0.054691339 \times \text{CO2\_Agri} 
+- 0.053441318 \times \text{CO2\_Min}\\  
++ 0.064791530	 \times \text{CO2\_Transp} 
++ 0.109209310 \times \text{CO2\_Domestico}\\ 
++ 0.237686119	\times \text{Transporte carretera} 
+- 0.224378950 \times \text{Renta\_P\_C}\\    
+- 0.001730536	\times \text{I\_Produc\_M}
++ 0.124281631 \times \text{Pob\_T}\\   
++ 0.114090735	 \times \text{T\_Desemp} 
++ 0.222050177 \times \text{Mort\_Inf}\\    
++ 0.492145271 \times \text{Edad Media} 
++ 0.359839721 \times \text{Dif\_Edad\_G}\\
+- 0.395410684	 \times \text{Tasa\_Nac}
++ 0.515145188	 \times \text{T\_Mort}
+\end{multline*}
+$$
+
+$$
+\begin{multline*}
+\Phi_{3} = 
+0.10415088 \times \text{CO2\_Agri} 
++ 0.27040075 \times \text{CO2\_Min}\\  
++ 0.06921754	 \times \text{CO2\_Transp} 
++ 0.05685151 \times \text{CO2\_Domestico}\\ 
++ 0.09574450	\times \text{Transporte carretera} 
+- 0.28734428 \times \text{Renta\_P\_C}\\    
++ 0.51532058	\times \text{I\_Produc\_M}
++ 0.04727048 \times \text{Pob\_T}\\   
+- 0.43381615	 \times \text{T\_Desemp} 
++ 0.29169783 \times \text{Mort\_Inf}\\    
+- 0.23677355 \times \text{Edad Media} 
++ 0.19418577 \times \text{Dif\_Edad\_G}\\
++ 0.38793569	\times \text{Tasa\_Nac}
++ 0.17590143	\times \text{T\_Mort}
+\end{multline*}
+$$
+
+$$
+\begin{multline*}
+\Phi_{4} = 
+0.176518745 \times \text{CO2\_Agri} 
+- 0.275467346 \times \text{CO2\_Min}\\  
++ 0.002449672	 \times \text{CO2\_Transp} 
++ 0.082033771 \times \text{CO2\_Domestico}\\ 
+- 0.720037174	\times \text{Transporte carretera} 
+- 0.161082981 \times \text{Renta\_P\_C}\\    
++ 0.012586572	\times \text{I\_Produc\_M}
++ 0.105219452 \times \text{Pob\_T}\\   
++ 0.333558185	 \times \text{T\_Desemp} 
++ 0.422054008 \times \text{Mort\_Inf}\\    
+- 0.138071749 \times \text{Edad Media} 
++ 0.134381139 \times \text{Dif\_Edad\_G}\\
++ 0.063806381	\times \text{Tasa\_Nac}
++ 0.002918671	\times \text{T\_Mort}
+\end{multline*}
+$$
+
+**Para asegurarnos de que hemos realizado los cálculos de forma correcta**
+
+Los nuevos componentes obtenidos a partir del PCA tienen que cumplir unas condiciones. En primer lugar, deben de tener media 0:
+
+```{r}
+apply(pca_fit$ind$coord[,1:4], MARGIN = 2, mean)
+```
+
+Y además su varianza tiene que ser igual a los autovalores calculados previamente.
+
+```{r}
+apply(pca_fit$ind$coord[,1:4], MARGIN = 2, function(x) { mean(x^2) - mean(x)^2})
+
+head(pca_fit$eig, 4)
+```
+
+## Ejercicio 2
+
+> Hacer de nuevo el análisis, pero ahora indicando el número de componentes principales que hemos decidido retener. Sobre este análisis contestar los siguientes apartados.
+
+-   **¿Cómo se calculan las Componentes (expresa las ecuaciones)?**
+-   **¿Con que variables está más correlada la segunda componente?**
+-   **¿Qué más puedes decir sobre las componentes y variables originales? ¿alguna relación?**
+
+A raíz del primer analisis indicando 14 componentes,se realizará uno nuevo pero con 4 componentes que son los que cubren más del 75% de la varianza total explicada.
+
+```{r}
+pca_fit <- PCA(euro_contam_std[, 2:15], scale.unit = TRUE, ncp = 4, graph = FALSE)
+
+
+head(pca_fit$eig, 4)
+```
+
+
+Una vez realizado el análisis de componentes principales, los autovectores obtenidos representan las combinaciones lineales de las variables originales que definen cada componente. Estos autovectores pueden visualizarse para comprender cómo se construyen los componentes y saber el peso de cada variable en los distintos componentes.
+
+```{r}
+original_vars <- names(euro_contam_std[2:15])
+
+auto_vec <- tibble(original_vars, as_tibble(pca_fit$svd$V[, 1:4]))
+
+auto_vec
+```
+
+Por tanto las ecuaciones de los distintos componentes son las siguientes:
+
+$$
+\begin{multline*}
+\Phi_{1} = 
+0.425897105 \times \text{CO2\_Agri} 
++ 0.323481483 \times \text{CO2\_Min}\\  
++ 0.445648014	 \times \text{CO2\_Transp} 
++ 0.448961525 \times \text{CO2\_Domestico}\\ 
+- 0.027534920	\times \text{Transporte carretera} 
++ 0.029352470 \times \text{Renta\_P\_C}\\    
+- 0.159128051	\times \text{I\_Produc\_M}
++ 0.449901004 \times \text{Pob\_T}\\   
+- 0.004219013	 \times \text{T\_Desemp} 
+- 0.095495484 \times \text{Mort\_Inf}\\    
++ 0.080188861 \times \text{Edad Media} 
+- 0.227421252 \times \text{Dif\_Edad\_G}\\
+- 0.010968751	 \times \text{Tasa\_Nac}
+- 0.130545828 \times \text{T\_Mort}
+\end{multline*}
+$$
+
+$$
+\begin{multline*}
+\Phi_{2} = 
+0.054691339 \times \text{CO2\_Agri} 
+- 0.053441318 \times \text{CO2\_Min}\\  
++ 0.064791530	 \times \text{CO2\_Transp} 
++ 0.109209310 \times \text{CO2\_Domestico}\\ 
++ 0.237686119	\times \text{Transporte carretera} 
+- 0.224378950 \times \text{Renta\_P\_C}\\    
+- 0.001730536	\times \text{I\_Produc\_M}
++ 0.124281631 \times \text{Pob\_T}\\   
++ 0.114090735	 \times \text{T\_Desemp} 
++ 0.222050177 \times \text{Mort\_Inf}\\    
++ 0.492145271 \times \text{Edad Media} 
++ 0.359839721 \times \text{Dif\_Edad\_G}\\
+- 0.395410684	 \times \text{Tasa\_Nac}
++ 0.515145188	 \times \text{T\_Mort}
+\end{multline*}
+$$
+
+$$
+\begin{multline*}
+\Phi_{3} = 
+0.10415088 \times \text{CO2\_Agri} 
++ 0.27040075 \times \text{CO2\_Min}\\  
++ 0.06921754	 \times \text{CO2\_Transp} 
++ 0.05685151 \times \text{CO2\_Domestico}\\ 
++ 0.09574450	\times \text{Transporte carretera} 
+- 0.28734428 \times \text{Renta\_P\_C}\\    
++ 0.51532058	\times \text{I\_Produc\_M}
++ 0.04727048 \times \text{Pob\_T}\\   
+- 0.43381615	 \times \text{T\_Desemp} 
++ 0.29169783 \times \text{Mort\_Inf}\\    
+- 0.23677355 \times \text{Edad Media} 
++ 0.19418577 \times \text{Dif\_Edad\_G}\\
++ 0.38793569	\times \text{Tasa\_Nac}
++ 0.17590143	\times \text{T\_Mort}
+\end{multline*}
+$$
+
+$$
+\begin{multline*}
+\Phi_{4} = 
+0.176518745 \times \text{CO2\_Agri} 
+- 0.275467346 \times \text{CO2\_Min}\\  
++ 0.002449672	 \times \text{CO2\_Transp} 
++ 0.082033771 \times \text{CO2\_Domestico}\\ 
+- 0.720037174	\times \text{Transporte carretera} 
+- 0.161082981 \times \text{Renta\_P\_C}\\    
++ 0.012586572	\times \text{I\_Produc\_M}
++ 0.105219452 \times \text{Pob\_T}\\   
++ 0.333558185	 \times \text{T\_Desemp} 
++ 0.422054008 \times \text{Mort\_Inf}\\    
+- 0.138071749 \times \text{Edad Media} 
++ 0.134381139 \times \text{Dif\_Edad\_G}\\
++ 0.063806381	\times \text{Tasa\_Nac}
++ 0.002918671	\times \text{T\_Mort}
+\end{multline*}
+$$
+Para saber con que variable está más correlada la segunda componente se va a visualizar el gráfico de correlación entre las variables originales y los nuevos componentes que han surgido a partir del PCA y nos vamos a centrar en el segundo componente.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+comp_corr_data <- data.frame(t(pca_fit$var$coord))
+
+comp_corr_data <- comp_corr_data |>
+  mutate(Componentes = as.factor(rownames(comp_corr_data))) |> 
+  filter(Componentes %in% c("Dim.1","Dim.2","Dim.3","Dim.4"))
+
+ggparcoord(comp_corr_data,
+           columns = 1:(ncol(comp_corr_data)-1), 
+           groupColumn = "Componentes",
+           scale = "globalminmax",
+           showPoints = TRUE) + 
+           labs(title = "Gráfico de correlación",
+                subtitle = "Coeficientes de correlación entre las variables y componentes",
+                x = "Variables",
+                y = "Correlación")+
+           theme_ipsum()+
+           theme(plot.title = element_text(size=15),
+                 plot.subtitle = element_text(size=10),
+                 axis.line = element_line(color="black"),
+                 axis.text.x = element_text(size = 8, angle = 90),
+                 axis.text.y = element_text(size = 8),
+                 legend.position = "bottom",
+                 legend.background = element_rect(color = "black",
+                                     fill = "white",
+                                     linewidth = 0.5,
+                                     linetype = "solid"))
+
+```
+
+Podemos observar que la segunda componente está fuertemente relacionada de forma positiva con la Edad_Media, Dif_Edad_G y con la T_Mort, mientras que de manera inversa, está muy relacionada con la Tasa_Nac. 
+
+Por lo tanto podemos deducir que esta segunda componente representa la edad de la población, la diferencia de edad entre hombres y mujeres y la tasa de mortalidad. También se relaciona con la natalidad de forma inversa.
+
+En cuanto al resto de componentes y su relación con las variables originales:
+
+* **La primera componente** está fuertemente relacionada de forma positiva con las variables CO2_Agri, CO2_Min, CO2_Transp, CO2_Domestico y Pob_T por tanto podemos deducir que representa la relación entre las emisiones de C02 y la población de los países.
+
+* **La tercera componente** tiene una fuerte relación positiva con I_Product_M y Tasa_Nac e inversa con T_Desempleo por lo que representa la relación entre la producción de la industria y la tasa de desempleo en el país que además refleja una fuerte relación de estas dos variables con la natalidad.
+
+* **La cuarta componente** únicamente destaca en una correlación negativa con la variable de Transporte carretera que representa la información de forma inversa del transporte por este medio.
+
+
+Visualizamos la relación de los nuevos componentes del PCA con los distintos países
+
+```{r}
+scores <- tibble("País" = euro_contam_std$País,as_tibble(pca_fit$ind$coord[,1:4]))
+
+datatable(scores , rownames = FALSE, filter = "top",
+          options = list(pageLength = 10)) |>
+          formatStyle(names(scores))
+
+ggpairs(scores[, c("Dim.1", "Dim.2", "Dim.3", "Dim.4")],
+       upper = list(continuous = "blank")) +
+  ggtitle("Gráfico de pares de los componentes principales")
+```
+
+
+Para mostrar y explicar en detalle la relación entre las variables originales y los nuevos componentes se va a poner de ejemplo la primera componente.
+
+**En cuanto a la primera componente**
+
+En este primer gráfico donde se relaciona el *primer componente* con el *segundo* se muestra una distribución de los países basada en estas dos componentes. Los países como Bulgaria, Lituania, Letonia se encuentran en la parte superior y a la izquierda, indicando que tienen poblaciones más pequeñas con tasas de natalidad más altas. Mientras que países como Francia, Italia, Alemania, España están ubicados en la parte central o derecha, lo que indica mayores emisiones de CO2 y poblaciones más grandes.
+
+```{r}
+#| code-fold: true
+scores <- tibble("País" = euro_contam_std$País,as_tibble(pca_fit$ind$coord[,1:2]))
+
+ggplot(scores, aes(x=Dim.1, y=Dim.2)) + 
+         geom_point() +
+         geom_text(
+           label=scores$País,
+           nudge_x = 0.25,
+           nudge_y = 0.25,
+           check_overlap = TRUE
+         )
+```
+
+Siguiendo la explicación del primer gráfico, en este segundo se relaciona el *tercer componente* con el *primero*. Los países como Francia, Italia, Alemania, España mencionados anteriormente se ubican en la parte de la derecha indicando mayores emisiones y poblaciones más grandes.Además se refleja como existe una relación entre la producción industrial, natalidad y el desempleo, ya que los países con mayor producción industrial y natalidad también tienden a mostrar un desempleo relativamente bajo, mientras que aquellos con menor producción industrial y natalidad más baja, presentan tasas de desempleo más altas.
+
+```{r}
+#| code-fold: true
+scores <- tibble("País" = euro_contam_std$País,as_tibble(pca_fit$ind$coord[,c(1, 3)]))
+
+ggplot(scores, aes(x=Dim.1, y=Dim.3)) + 
+         geom_point() +
+         geom_text(
+           label=scores$País,
+           nudge_x = 0.25,
+           nudge_y = 0.25,
+           check_overlap = TRUE
+         )
+```
+
+En esta última gráfica se establece una relación de las emisiones de C02 y la población con la dependencia del transporte por carretera. Países como Reino Unido y Alemania están en un extremo alto en la primera componente y valores intermedios en la cuarta componente, lo que indica una altas emisiones de C02 y mayor población pero una menor dependencia del transporte por carretera.
+
+Por ejemplo Polonia y Eslovenia tienen valores negativos en la cuarta componente y más bajos en la primera, lo que indica una dependencia mayor del transporte por carretera y emisiones más bajas
+
+```{r}
+#| code-fold: true
+scores <- tibble("País" = euro_contam_std$País,as_tibble(pca_fit$ind$coord[,c(1, 4)]))
+
+ggplot(scores, aes(x=Dim.1, y=Dim.4)) + 
+         geom_point() +
+         geom_text(
+           label=scores$País,
+           nudge_x = 0.25,
+           nudge_y = 0.25,
+           check_overlap = TRUE
+         )
+```

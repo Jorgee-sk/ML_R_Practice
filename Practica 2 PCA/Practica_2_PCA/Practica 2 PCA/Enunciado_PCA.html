@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.57">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Jorge Galiano García">
+
+<title>Practica PCA</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="Enunciado_PCA_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Enunciado_PCA_files/libs/quarto-html/quarto.js"></script>
+<script src="Enunciado_PCA_files/libs/quarto-html/popper.min.js"></script>
+<script src="Enunciado_PCA_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Enunciado_PCA_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Enunciado_PCA_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Enunciado_PCA_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Enunciado_PCA_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Enunciado_PCA_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Enunciado_PCA_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<link href="Enunciado_PCA_files/libs/htmltools-fill-0.5.8.1/fill.css" rel="stylesheet">
+
+<script src="Enunciado_PCA_files/libs/htmlwidgets-1.6.4/htmlwidgets.js"></script>
+
+<link href="Enunciado_PCA_files/libs/datatables-css-0.0.0/datatables-crosstalk.css" rel="stylesheet">
+
+<script src="Enunciado_PCA_files/libs/datatables-binding-0.33/datatables.js"></script>
+
+<script src="Enunciado_PCA_files/libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+
+<link href="Enunciado_PCA_files/libs/dt-core-1.13.6/css/jquery.dataTables.min.css" rel="stylesheet">
+
+<link href="Enunciado_PCA_files/libs/dt-core-1.13.6/css/jquery.dataTables.extra.css" rel="stylesheet">
+
+<script src="Enunciado_PCA_files/libs/dt-core-1.13.6/js/jquery.dataTables.min.js"></script>
+
+<link href="Enunciado_PCA_files/libs/nouislider-7.0.10/jquery.nouislider.min.css" rel="stylesheet">
+
+<script src="Enunciado_PCA_files/libs/nouislider-7.0.10/jquery.nouislider.min.js"></script>
+
+<link href="Enunciado_PCA_files/libs/selectize-0.12.0/selectize.bootstrap3.css" rel="stylesheet">
+
+<script src="Enunciado_PCA_files/libs/selectize-0.12.0/selectize.min.js"></script>
+
+<link href="Enunciado_PCA_files/libs/crosstalk-1.2.1/css/crosstalk.min.css" rel="stylesheet">
+
+<script src="Enunciado_PCA_files/libs/crosstalk-1.2.1/js/crosstalk.min.js"></script>
+
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article toc-left">
+<div id="quarto-sidebar-toc-left" class="sidebar toc-left">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">indice</h2>
+   
+  <ul>
+  <li><a href="#principal-component-analysis" id="toc-principal-component-analysis" class="nav-link active" data-scroll-target="#principal-component-analysis">Principal Component Analysis</a>
+  <ul>
+  <li><a href="#ejercicio-1" id="toc-ejercicio-1" class="nav-link" data-scroll-target="#ejercicio-1">Ejercicio 1</a></li>
+  <li><a href="#ejercicio-2" id="toc-ejercicio-2" class="nav-link" data-scroll-target="#ejercicio-2">Ejercicio 2</a></li>
+  </ul></li>
+  </ul>
+</nav>
+</div>
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Practica PCA</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Jorge Galiano García </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="principal-component-analysis" class="level1">
+<h1>Principal Component Analysis</h1>
+<p>Librerías necesarias:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Manejo de datos</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Importar Excel</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Recopilarción de temas, escalas y utilidades adicionales de ggplot2</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(hrbrthemes)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Mostrar tablas en HTML (datatable)</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(DT)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Combinar gráficos</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gridExtra)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co"># PCA</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(FactoMineR)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(factoextra)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Correlacion</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(corrplot)</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Modelos</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidymodels)</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Para grafico de Correlacion CP vs X</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(hrbrthemes)</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(GGally)</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(viridis)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="ejercicio-1" class="level2">
+<h2 class="anchored" data-anchor-id="ejercicio-1">Ejercicio 1</h2>
+<blockquote class="blockquote">
+<p>El conjunto de datos <code>euro_contam</code> está compuesto por 14 variables de carácter socio económico y relacionadas con las emisiones de CO2 para 27 países de la Unión Europea (observaciones). Para reducir el número de variables e intentar encontrar relaciones, tanto entre variables como entre países, realizar los siguientes apartados.</p>
+</blockquote>
+<ul>
+<li><strong>Realizar un análisis de componentes principales sobre la matriz de correlaciones.</strong>
+<ul>
+<li><strong>Obtén los autovalores y autovectores</strong></li>
+<li><strong>¿Con cuantas componentes nos quedaríamos? (al menos un 75% de la varianza total explicada)</strong></li>
+</ul></li>
+</ul>
+<p>En primer lugar se van a visualizar en una tabla los datos del dataset obtenido a partir del excel</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>euro_contam <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"./data/euro_contam.xlsx"</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>euro_contam_tibble <span class="ot">&lt;-</span> <span class="fu">as_tibble</span>(euro_contam)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">datatable</span>(euro_contam_tibble , <span class="at">rownames =</span> <span class="cn">FALSE</span>, <span class="at">filter =</span> <span class="st">"top"</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>          <span class="at">options =</span> <span class="fu">list</span>(<span class="at">pageLength =</span> <span class="dv">10</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>          <span class="fu">formatStyle</span>(<span class="fu">names</span>(euro_contam_tibble), <span class="at">lineHeight =</span> <span class="st">"100%"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="datatables html-widget html-fill-item" id="htmlwidget-528e16cdeb7cfda1c5a9" style="width:100%;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-528e16cdeb7cfda1c5a9">{"x":{"filter":"top","vertical":false,"filterHTML":"<tr>\n  <td data-type=\"character\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none;position: absolute;width: 200px;opacity: 1\">\n      <div data-min=\"165\" data-max=\"925\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none;position: absolute;width: 200px;opacity: 1\">\n      <div data-min=\"110.57632\" data-max=\"93426.47065\" data-scale=\"14\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none;position: absolute;width: 200px;opacity: 1\">\n      <div data-min=\"4.9503\" data-max=\"19873.29704\" data-scale=\"15\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none;position: absolute;width: 200px;opacity: 1\">\n      <div data-min=\"398.44674\" data-max=\"85363.55206\" data-scale=\"13\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none;position: absolute;width: 200px;opacity: 1\">\n      <div data-min=\"402.13351\" data-max=\"182281.15144\" data-scale=\"12\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none;position: absolute;width: 200px;opacity: 1\">\n      <div data-min=\"39\" data-max=\"159.6\" data-scale=\"1\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none;position: absolute;width: 200px;opacity: 1\">\n      <div data-min=\"31\" data-max=\"267\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none;position: absolute;width: 200px;opacity: 1\">\n      <div data-min=\"78\" data-max=\"166.6\" data-scale=\"1\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none;position: absolute;width: 200px;opacity: 1\">\n      <div data-min=\"440.433\" data-max=\"82800\" data-scale=\"3\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none;position: absolute;width: 200px;opacity: 1\">\n      <div data-min=\"2.8\" data-max=\"20.9\" data-scale=\"1\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none;position: absolute;width: 200px;opacity: 1\">\n      <div data-min=\"1.6\" data-max=\"7.6\" data-scale=\"1\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none;position: absolute;width: 200px;opacity: 1\">\n      <div data-min=\"36.7\" data-max=\"45.7\" data-scale=\"1\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none;position: absolute;width: 200px;opacity: 1\">\n      <div data-min=\"3.3\" data-max=\"10.5\" data-scale=\"1\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none;position: absolute;width: 200px;opacity: 1\">\n      <div data-min=\"8\" data-max=\"14\" data-scale=\"1\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none;position: absolute;width: 200px;opacity: 1\">\n      <div data-min=\"6.4\" data-max=\"15.3\" data-scale=\"1\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n<\/tr>","data":[["Austria","Belgium","Bulgaria","Cyprus","Czech Republic","Denmark","Estonia","Finland","France","Germany","Greece","Hungary","Ireland","Italy","Latvia","Lithuania","Luxembourg","Malta","Netherlands","Poland","Portugal","Romania","Slovakia","Slovenia","Spain","Sweden","United Kingdom"],[165,190,245,null,310,315,331,340,350,394,400,445,470,480,541,542,570,590,630,730,735,755,548,789,830,850,925],[8595.076560000001,11827.09797,3521.16525,650.7038700000001,8683.01455,12587.0195,1451.75394,8116.807409999999,93426.47065,77281.50644,9264.256009999999,8597.970649999999,19501.11862,38627.69351,3206.86477,4028.47776,721.83398,110.57632,28723.26124,45297.25584,10406.6781,18059.68123,3211.06324,1943.86249,43521.4702,9576.72921,50461.87452],[1124.55274,44.68628,418.5762099999999,20.01128,7151.73538,1827.57099,103.61979,422.86251,1099.31027,7215.98837,28.14826,737.2974899999999,263.96484,4145.68455,43.61269,10.24792,5.611,4.950299999999999,3094.00461,15995.84657,239.745,5007.17712,1052.03955,295.85749,2884.73175,1078.13835,19873.29704],[6520.4057,8260.22349,5617.00999,398.44674,8392.266029999999,39220.21313,1552.5589,10448.33124,44008.98511,85363.55206,6861.23705,4016.81627,2911.14063,45482.15794,2385.68867,7510.14844,3740.22878,3409.37173,29118.49311,29110.95038,5632.0961,7406.40172,5056.12752,4055.8243,33798.75472,12796.86443,83641.56293],[13650.48705,25073.32748,8850.838470000001,1682.53472,10306.95554,7501.07056,1011.23803,5510.89346,120718.73148,182281.15144,14652.82313,13688.87873,12390.57742,98735.82878,2023.28772,2835.53094,1580.21731,402.13351,35748.02966,49745.62074,8203.0345,15697.48046,4540.8703,3115.64067,63654.96012,9593.842710000001,127733.31989],[72.5,159.6,110,39,101.8,65.7,49,76.3,70.7,90.09999999999999,102.5,127.1,39.2,61.5,102.4,112.2,74,71.5,84.8,131.2,77.90000000000001,66.09999999999999,93.40000000000001,138.9,86.5,86.09999999999999,88.09999999999999],[126,118,31,59,81,88,125,74,38,105,123,67,129,177,96,75,267,95,128,69,77,59,77,83,92,124,108],[113.7,111.7,118.9,78,126.4,120.8,140.4,97,101.9,111.6,93.59999999999999,125.8,166.6,94.59999999999999,133.9,133.2,101.5,94.8,106.1,129.1,100.4,139.2,149,116.4,97.90000000000001,96.09999999999999,103.8],[8772.865,11365.834,7101.859,854.802,10578.82,5748.769,1315.635,5503.297,67024.459,82800,10757.293,9797.561,4774.833,60589.445,1950.116,2847.904,590.667,440.433,17081.507,37972.964,10309.573,19638.309,5435.343,2065.895,46528.966,9995.153,65808.573],[5.4,7.3,6.1,10.7,2.8,5.8,5.9,8.699999999999999,9.699999999999999,3.7,20.9,4.3,6.2,11.3,8.5,7.6,6.1,4.1,4.8,4.8,8.9,5.2,7.7,6.5,16.9,7.1,4.2],[3.1,3.3,6.6,2.7,2.5,3.7,2.5,1.7,3.7,3.3,4,4.2,3.4,2.9,4.1,4.2,2.8,5.8,3.3,2.3,2.9,7.6,5.1,1.6,2.7,2.5,3.9],[42.9,41.4,43.7,37.3,41.7,41.5,41.6,42.5,41.1,45.7,43.9,42.1,36.7,45.5,42.9,42.9,39.3,41.2,42.3,39.2,44,41.5,39.4,43.2,42.8,40.9,40],[4.9,4.7,7,3.8,5.9,3.9,9,5.7,6.3,4.8,5.2,6.7,3.8,4.6,9.800000000000001,10.5,4.7,4.3,3.3,3.7,6.2,7.2,7.1,6.1,5.7,3.7,3.6],[9.800000000000001,10.8,9.199999999999999,10.8,10.5,10.2,10.6,10.1,12,9,8.5,9.4,14,8,11.1,10.8,10.7,10,10.1,11.3,8.300000000000001,10,10.3,10,9,11.7,11.9],[9.6,9.800000000000001,15.3,6.9,10.5,9.199999999999999,11.6,9.6,8.9,11.3,11.2,13.4,6.4,10.7,14.4,14.4,7,8,8.699999999999999,7.8,10.5,13.2,9.9,9.6,9.1,9.300000000000001,9.199999999999999]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th>Pais<\/th>\n      <th>ID<\/th>\n      <th>CO2_Agri<\/th>\n      <th>CO2_Min<\/th>\n      <th>CO2_Transp<\/th>\n      <th>CO2_Domestico<\/th>\n      <th>Transporte carretera<\/th>\n      <th>Renta_P_C<\/th>\n      <th>I_Produc_M<\/th>\n      <th>Pob_T<\/th>\n      <th>T_Desemp<\/th>\n      <th>Mort_Inf<\/th>\n      <th>Edad Media<\/th>\n      <th>Dif_Edad_G<\/th>\n      <th>Tasa_Nac<\/th>\n      <th>T_Mort<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"pageLength":10,"columnDefs":[{"className":"dt-right","targets":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]},{"name":"Pais","targets":0},{"name":"ID","targets":1},{"name":"CO2_Agri","targets":2},{"name":"CO2_Min","targets":3},{"name":"CO2_Transp","targets":4},{"name":"CO2_Domestico","targets":5},{"name":"Transporte carretera","targets":6},{"name":"Renta_P_C","targets":7},{"name":"I_Produc_M","targets":8},{"name":"Pob_T","targets":9},{"name":"T_Desemp","targets":10},{"name":"Mort_Inf","targets":11},{"name":"Edad Media","targets":12},{"name":"Dif_Edad_G","targets":13},{"name":"Tasa_Nac","targets":14},{"name":"T_Mort","targets":15}],"order":[],"autoWidth":false,"orderClasses":false,"orderCellsTop":true,"rowCallback":"function(row, data, displayNum, displayIndex, dataIndex) {\nvar value=data[0]; $(this.api().cell(row, 0).node()).css({'line-height':'100%'});\nvar value=data[1]; $(this.api().cell(row, 1).node()).css({'line-height':'100%'});\nvar value=data[2]; $(this.api().cell(row, 2).node()).css({'line-height':'100%'});\nvar value=data[3]; $(this.api().cell(row, 3).node()).css({'line-height':'100%'});\nvar value=data[4]; $(this.api().cell(row, 4).node()).css({'line-height':'100%'});\nvar value=data[5]; $(this.api().cell(row, 5).node()).css({'line-height':'100%'});\nvar value=data[6]; $(this.api().cell(row, 6).node()).css({'line-height':'100%'});\nvar value=data[7]; $(this.api().cell(row, 7).node()).css({'line-height':'100%'});\nvar value=data[8]; $(this.api().cell(row, 8).node()).css({'line-height':'100%'});\nvar value=data[9]; $(this.api().cell(row, 9).node()).css({'line-height':'100%'});\nvar value=data[10]; $(this.api().cell(row, 10).node()).css({'line-height':'100%'});\nvar value=data[11]; $(this.api().cell(row, 11).node()).css({'line-height':'100%'});\nvar value=data[12]; $(this.api().cell(row, 12).node()).css({'line-height':'100%'});\nvar value=data[13]; $(this.api().cell(row, 13).node()).css({'line-height':'100%'});\nvar value=data[14]; $(this.api().cell(row, 14).node()).css({'line-height':'100%'});\nvar value=data[15]; $(this.api().cell(row, 15).node()).css({'line-height':'100%'});\n}"}},"evals":["options.rowCallback"],"jsHooks":[]}</script>
+</div>
+</div>
+<p>Como podemos observar existen variables que no aportan información numérica relevante para el análisis de componentes principales, estas son el ID y el País.</p>
+<p>Se van a estandarizar los datos pero sin tener en cuenta estas variables. Aun así se va a conservar en los datos resultantes el nombre del país por su posible utilidad en visualizaciones de datos posteriores.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>euro_contam_std <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="st">"País"</span> <span class="ot">=</span> euro_contam_tibble<span class="sc">$</span>Pais,</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>                          <span class="fu">as_tibble</span>(<span class="fu">scale</span>(euro_contam_tibble[, <span class="dv">3</span><span class="sc">:</span><span class="dv">16</span>])))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Con los datos estandarizados y sin tener en cuenta la variable del nombre del país se puede efectuar el calculo de la matriz de correlación</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>euro_cont_cor_mat <span class="ot">&lt;-</span> <span class="fu">cor</span>(euro_contam_std[, <span class="dv">2</span><span class="sc">:</span><span class="dv">15</span>])</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>euro_cont_cor_mat</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                        CO2_Agri     CO2_Min  CO2_Transp CO2_Domestico
+CO2_Agri              1.00000000  0.50687088  0.82278120    0.92006954
+CO2_Min               0.50687088  1.00000000  0.67617014    0.56857052
+CO2_Transp            0.82278120  0.67617014  1.00000000    0.92521343
+CO2_Domestico         0.92006954  0.56857052  0.92521343    1.00000000
+Transporte carretera -0.05584559  0.14222970 -0.04721270   -0.02576384
+Renta_P_C            -0.12033077 -0.06087046  0.03326792    0.01188540
+I_Produc_M           -0.15067792  0.02002981 -0.22863437   -0.22366022
+Pob_T                 0.93558606  0.60945669  0.90110880    0.97828515
+T_Desemp              0.03623525 -0.29642777 -0.09113631   -0.01192912
+Mort_Inf             -0.08766904 -0.05088270 -0.09514763   -0.07756468
+Edad Media            0.14681507 -0.11217850  0.24321119    0.28342732
+Dif_Edad_G           -0.25491163 -0.33728979 -0.35756941   -0.26585256
+Tasa_Nac              0.08732641  0.16256544 -0.04166154   -0.06099518
+T_Mort               -0.16417877 -0.13883334 -0.11161370   -0.07112138
+                     Transporte carretera    Renta_P_C  I_Produc_M       Pob_T
+CO2_Agri                      -0.05584559 -0.120330766 -0.15067792  0.93558606
+CO2_Min                        0.14222970 -0.060870463  0.02002981  0.60945669
+CO2_Transp                    -0.04721270  0.033267921 -0.22863437  0.90110880
+CO2_Domestico                 -0.02576384  0.011885399 -0.22366022  0.97828515
+Transporte carretera           1.00000000 -0.195848354  0.07109203 -0.02445493
+Renta_P_C                     -0.19584835  1.000000000 -0.13961936 -0.02793889
+I_Produc_M                     0.07109203 -0.139619358  1.00000000 -0.23273203
+Pob_T                         -0.02445493 -0.027938892 -0.23273203  1.00000000
+T_Desemp                      -0.06825856  0.043439076 -0.39385773  0.05940668
+Mort_Inf                      -0.02852768 -0.311987334  0.27606050 -0.06413991
+Edad Media                     0.27784364 -0.041845905 -0.25239394  0.28553292
+Dif_Edad_G                     0.17057331 -0.287036907  0.43461159 -0.25271031
+Tasa_Nac                      -0.14983226  0.002804892  0.41408185 -0.09975510
+T_Mort                         0.35013021 -0.356835518  0.27406145 -0.06225065
+                         T_Desemp    Mort_Inf  Edad Media  Dif_Edad_G
+CO2_Agri              0.036235253 -0.08766904  0.14681507 -0.25491163
+CO2_Min              -0.296427772 -0.05088270 -0.11217850 -0.33728979
+CO2_Transp           -0.091136310 -0.09514763  0.24321119 -0.35756941
+CO2_Domestico        -0.011929125 -0.07756468  0.28342732 -0.26585256
+Transporte carretera -0.068258561 -0.02852768  0.27784364  0.17057331
+Renta_P_C             0.043439076 -0.31198733 -0.04184591 -0.28703691
+I_Produc_M           -0.393857733  0.27606050 -0.25239394  0.43461159
+Pob_T                 0.059406682 -0.06413991  0.28553292 -0.25271031
+T_Desemp              1.000000000 -0.12253166  0.20080141  0.05802481
+Mort_Inf             -0.122531662  1.00000000  0.02572380  0.27143188
+Edad Media            0.200801411  0.02572380  1.00000000  0.30049420
+Dif_Edad_G            0.058024815  0.27143188  0.30049420  1.00000000
+Tasa_Nac             -0.336770259 -0.09279241 -0.77687333 -0.11313991
+T_Mort               -0.006580283  0.48005004  0.60431291  0.76453543
+                         Tasa_Nac       T_Mort
+CO2_Agri              0.087326409 -0.164178773
+CO2_Min               0.162565436 -0.138833343
+CO2_Transp           -0.041661543 -0.111613702
+CO2_Domestico        -0.060995180 -0.071121377
+Transporte carretera -0.149832258  0.350130212
+Renta_P_C             0.002804892 -0.356835518
+I_Produc_M            0.414081845  0.274061450
+Pob_T                -0.099755096 -0.062250654
+T_Desemp             -0.336770259 -0.006580283
+Mort_Inf             -0.092792413  0.480050040
+Edad Media           -0.776873328  0.604312914
+Dif_Edad_G           -0.113139914  0.764535432
+Tasa_Nac              1.000000000 -0.388930303
+T_Mort               -0.388930303  1.000000000</code></pre>
+</div>
+</div>
+<p>🎂🎂 Aquí se pueden visualizar las correlaciones de las diferentes variables 🎂🎂:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">corrplot</span>(euro_cont_cor_mat, </span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>         <span class="at">type =</span> <span class="st">'lower'</span>, </span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">method =</span> <span class="st">'pie'</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">order =</span> <span class="st">'AOE'</span>, </span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">tl.col =</span> <span class="st">"black"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Enunciado_PCA_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Ahora de verdad…</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">corrplot</span>(<span class="at">type =</span> <span class="st">'lower'</span>,</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>         <span class="at">number.cex =</span> <span class="fl">0.7</span>, </span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">method =</span> <span class="st">'number'</span>, </span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>         euro_cont_cor_mat, </span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">order =</span> <span class="st">'AOE'</span>, </span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">tl.col =</span> <span class="st">"black"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Enunciado_PCA_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Una vez obtenida la matriz de correlación se pueden realizar los calculos de autovalores y autovectores. Para ello en primer lugar aplicaremos el PCA a los datos estandarizados y visualizaremos los Autovalores:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>pca_fit <span class="ot">&lt;-</span> <span class="fu">PCA</span>(euro_contam_std[, <span class="dv">2</span><span class="sc">:</span><span class="dv">15</span>], <span class="at">scale.unit =</span> <span class="cn">TRUE</span>, <span class="at">ncp =</span> <span class="dv">14</span>, <span class="at">graph =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>pca_fit<span class="sc">$</span>eig</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        eigenvalue percentage of variance cumulative percentage of variance
+comp 1  4.48688266            32.04916188                          32.04916
+comp 2  2.88426438            20.60188843                          52.65105
+comp 3  2.16722422            15.48017300                          68.13122
+comp 4  1.11136143             7.93829591                          76.06952
+comp 5  0.90641690             6.47440645                          82.54393
+comp 6  0.84757730             6.05412360                          88.59805
+comp 7  0.54816738             3.91548132                          92.51353
+comp 8  0.40127965             2.86628320                          95.37981
+comp 9  0.30685114             2.19179387                          97.57161
+comp 10 0.15454002             1.10385727                          98.67546
+comp 11 0.08638644             0.61704602                          99.29251
+comp 12 0.06130245             0.43787468                          99.73039
+comp 13 0.02968771             0.21205509                          99.94244
+comp 14 0.00805830             0.05755929                         100.00000</code></pre>
+</div>
+</div>
+<p>Cada autovalor que se ha calculado indica la cantidad de varianza total que es capturada por su componente principal correspondiente. Para verlo de forma más clara se calcula la siguiente gráfica:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fviz_eig</span>(pca_fit, </span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>         <span class="at">addlabels =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">barfill =</span> <span class="st">"#f4dda7"</span>,                       </span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">xlab =</span> <span class="st">"Componentes"</span>,                       </span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>         <span class="at">ylab =</span> <span class="st">"% de varianza explicada"</span>,          </span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">main =</span> <span class="st">"Varianza explicada por componentes"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Enunciado_PCA_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Con este gráfico se podría visualizar también cuantos componentes surgen cumpliendo con el requisito del 75% de la varianza total explicada. Con 4 componentes alcanzamos un 76.06% de varianza total explicada por lo que escogeremos los primeros 4 componentes.</p>
+<p>Observamos el peso de las variables originales en los 4 nuevos componentes principales.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>pca_fit<span class="sc">$</span>var<span class="sc">$</span>coord[, <span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                            Dim.1       Dim.2       Dim.3        Dim.4
+CO2_Agri              0.902146449  0.09288297  0.15332566  0.186088052
+CO2_Min               0.685206986 -0.09076004  0.39807034 -0.290400784
+CO2_Transp            0.943983345  0.11003625  0.10189857  0.002582472
+CO2_Domestico         0.951002110  0.18547151  0.08369392  0.086480927
+Transporte carretera -0.058325191  0.40366524  0.14095022 -0.759071312
+Renta_P_C             0.062175173 -0.38106551 -0.42301375 -0.169815496
+I_Produc_M           -0.337069222 -0.00293899  0.75862895  0.013268906
+Pob_T                 0.952992141  0.21106901  0.06958922  0.110923534
+T_Desemp             -0.008936825  0.19376169 -0.63864224  0.351640802
+Mort_Inf             -0.202281046  0.37711053  0.42942282  0.444934097
+Edad Media            0.169858154  0.83581633 -0.34856607 -0.145556796
+Dif_Edad_G           -0.481729677  0.61112019  0.28587048  0.141666113
+Tasa_Nac             -0.023234297 -0.67153080  0.57109934  0.067265406
+T_Mort               -0.276525606  0.87487737  0.25895321  0.003076896</code></pre>
+</div>
+</div>
+<p>Para el calculo de los autovectores se utiliza también la aplicación del PCA a nuestros datos estandarizados que nos generará un objeto donde encontraremos los autovectores:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>original_vars <span class="ot">&lt;-</span> <span class="fu">names</span>(euro_contam_std[<span class="dv">2</span><span class="sc">:</span><span class="dv">15</span>])</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>auto_vec <span class="ot">&lt;-</span> <span class="fu">tibble</span>(original_vars, <span class="fu">as_tibble</span>(pca_fit<span class="sc">$</span>svd<span class="sc">$</span>V[, <span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>]))</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>auto_vec</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 14 × 5
+   original_vars              V1       V2      V3       V4
+   &lt;chr&gt;                   &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
+ 1 CO2_Agri              0.426    0.0547   0.104   0.177  
+ 2 CO2_Min               0.323   -0.0534   0.270  -0.275  
+ 3 CO2_Transp            0.446    0.0648   0.0692  0.00245
+ 4 CO2_Domestico         0.449    0.109    0.0569  0.0820 
+ 5 Transporte carretera -0.0275   0.238    0.0957 -0.720  
+ 6 Renta_P_C             0.0294  -0.224   -0.287  -0.161  
+ 7 I_Produc_M           -0.159   -0.00173  0.515   0.0126 
+ 8 Pob_T                 0.450    0.124    0.0473  0.105  
+ 9 T_Desemp             -0.00422  0.114   -0.434   0.334  
+10 Mort_Inf             -0.0955   0.222    0.292   0.422  
+11 Edad Media            0.0802   0.492   -0.237  -0.138  
+12 Dif_Edad_G           -0.227    0.360    0.194   0.134  
+13 Tasa_Nac             -0.0110  -0.395    0.388   0.0638 
+14 T_Mort               -0.131    0.515    0.176   0.00292</code></pre>
+</div>
+</div>
+<p>Por tanto los 4 nuevos componentes quedan expresados de la siguiente forma:</p>
+<p><span class="math display">\[
+\begin{multline*}
+\Phi_{1} =
+0.425897105 \times \text{CO2\_Agri}
++ 0.323481483 \times \text{CO2\_Min}\\  
++ 0.445648014    \times \text{CO2\_Transp}
++ 0.448961525 \times \text{CO2\_Domestico}\\
+- 0.027534920   \times \text{Transporte carretera}
++ 0.029352470 \times \text{Renta\_P\_C}\\    
+- 0.159128051   \times \text{I\_Produc\_M}
++ 0.449901004 \times \text{Pob\_T}\\   
+- 0.004219013    \times \text{T\_Desemp}
+- 0.095495484 \times \text{Mort\_Inf}\\    
++ 0.080188861 \times \text{Edad Media}
+- 0.227421252 \times \text{Dif\_Edad\_G}\\
+- 0.010968751    \times \text{Tasa\_Nac}
+- 0.130545828 \times \text{T\_Mort}
+\end{multline*}
+\]</span></p>
+<p><span class="math display">\[
+\begin{multline*}
+\Phi_{2} =
+0.054691339 \times \text{CO2\_Agri}
+- 0.053441318 \times \text{CO2\_Min}\\  
++ 0.064791530    \times \text{CO2\_Transp}
++ 0.109209310 \times \text{CO2\_Domestico}\\
++ 0.237686119   \times \text{Transporte carretera}
+- 0.224378950 \times \text{Renta\_P\_C}\\    
+- 0.001730536   \times \text{I\_Produc\_M}
++ 0.124281631 \times \text{Pob\_T}\\   
++ 0.114090735    \times \text{T\_Desemp}
++ 0.222050177 \times \text{Mort\_Inf}\\    
++ 0.492145271 \times \text{Edad Media}
++ 0.359839721 \times \text{Dif\_Edad\_G}\\
+- 0.395410684    \times \text{Tasa\_Nac}
++ 0.515145188    \times \text{T\_Mort}
+\end{multline*}
+\]</span></p>
+<p><span class="math display">\[
+\begin{multline*}
+\Phi_{3} =
+0.10415088 \times \text{CO2\_Agri}
++ 0.27040075 \times \text{CO2\_Min}\\  
++ 0.06921754     \times \text{CO2\_Transp}
++ 0.05685151 \times \text{CO2\_Domestico}\\
++ 0.09574450    \times \text{Transporte carretera}
+- 0.28734428 \times \text{Renta\_P\_C}\\    
++ 0.51532058    \times \text{I\_Produc\_M}
++ 0.04727048 \times \text{Pob\_T}\\   
+- 0.43381615     \times \text{T\_Desemp}
++ 0.29169783 \times \text{Mort\_Inf}\\    
+- 0.23677355 \times \text{Edad Media}
++ 0.19418577 \times \text{Dif\_Edad\_G}\\
++ 0.38793569    \times \text{Tasa\_Nac}
++ 0.17590143    \times \text{T\_Mort}
+\end{multline*}
+\]</span></p>
+<p><span class="math display">\[
+\begin{multline*}
+\Phi_{4} =
+0.176518745 \times \text{CO2\_Agri}
+- 0.275467346 \times \text{CO2\_Min}\\  
++ 0.002449672    \times \text{CO2\_Transp}
++ 0.082033771 \times \text{CO2\_Domestico}\\
+- 0.720037174   \times \text{Transporte carretera}
+- 0.161082981 \times \text{Renta\_P\_C}\\    
++ 0.012586572   \times \text{I\_Produc\_M}
++ 0.105219452 \times \text{Pob\_T}\\   
++ 0.333558185    \times \text{T\_Desemp}
++ 0.422054008 \times \text{Mort\_Inf}\\    
+- 0.138071749 \times \text{Edad Media}
++ 0.134381139 \times \text{Dif\_Edad\_G}\\
++ 0.063806381   \times \text{Tasa\_Nac}
++ 0.002918671   \times \text{T\_Mort}
+\end{multline*}
+\]</span></p>
+<p><strong>Para asegurarnos de que hemos realizado los cálculos de forma correcta</strong></p>
+<p>Los nuevos componentes obtenidos a partir del PCA tienen que cumplir unas condiciones. En primer lugar, deben de tener media 0:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">apply</span>(pca_fit<span class="sc">$</span>ind<span class="sc">$</span>coord[,<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>], <span class="at">MARGIN =</span> <span class="dv">2</span>, mean)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        Dim.1         Dim.2         Dim.3         Dim.4 
+ 7.780556e-17  8.483280e-17  9.200459e-17 -6.655395e-17 </code></pre>
+</div>
+</div>
+<p>Y además su varianza tiene que ser igual a los autovalores calculados previamente.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">apply</span>(pca_fit<span class="sc">$</span>ind<span class="sc">$</span>coord[,<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>], <span class="at">MARGIN =</span> <span class="dv">2</span>, <span class="cf">function</span>(x) { <span class="fu">mean</span>(x<span class="sc">^</span><span class="dv">2</span>) <span class="sc">-</span> <span class="fu">mean</span>(x)<span class="sc">^</span><span class="dv">2</span>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   Dim.1    Dim.2    Dim.3    Dim.4 
+4.486883 2.884264 2.167224 1.111361 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(pca_fit<span class="sc">$</span>eig, <span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       eigenvalue percentage of variance cumulative percentage of variance
+comp 1   4.486883              32.049162                          32.04916
+comp 2   2.884264              20.601888                          52.65105
+comp 3   2.167224              15.480173                          68.13122
+comp 4   1.111361               7.938296                          76.06952</code></pre>
+</div>
+</div>
+</section>
+<section id="ejercicio-2" class="level2">
+<h2 class="anchored" data-anchor-id="ejercicio-2">Ejercicio 2</h2>
+<blockquote class="blockquote">
+<p>Hacer de nuevo el análisis, pero ahora indicando el número de componentes principales que hemos decidido retener. Sobre este análisis contestar los siguientes apartados.</p>
+</blockquote>
+<ul>
+<li><strong>¿Cómo se calculan las Componentes (expresa las ecuaciones)?</strong></li>
+<li><strong>¿Con que variables está más correlada la segunda componente?</strong></li>
+<li><strong>¿Qué más puedes decir sobre las componentes y variables originales? ¿alguna relación?</strong></li>
+</ul>
+<p>A raíz del primer analisis indicando 14 componentes,se realizará uno nuevo pero con 4 componentes que son los que cubren más del 75% de la varianza total explicada.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>pca_fit <span class="ot">&lt;-</span> <span class="fu">PCA</span>(euro_contam_std[, <span class="dv">2</span><span class="sc">:</span><span class="dv">15</span>], <span class="at">scale.unit =</span> <span class="cn">TRUE</span>, <span class="at">ncp =</span> <span class="dv">4</span>, <span class="at">graph =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(pca_fit<span class="sc">$</span>eig, <span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       eigenvalue percentage of variance cumulative percentage of variance
+comp 1   4.486883              32.049162                          32.04916
+comp 2   2.884264              20.601888                          52.65105
+comp 3   2.167224              15.480173                          68.13122
+comp 4   1.111361               7.938296                          76.06952</code></pre>
+</div>
+</div>
+<p>Una vez realizado el análisis de componentes principales, los autovectores obtenidos representan las combinaciones lineales de las variables originales que definen cada componente. Estos autovectores pueden visualizarse para comprender cómo se construyen los componentes y saber el peso de cada variable en los distintos componentes.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>original_vars <span class="ot">&lt;-</span> <span class="fu">names</span>(euro_contam_std[<span class="dv">2</span><span class="sc">:</span><span class="dv">15</span>])</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>auto_vec <span class="ot">&lt;-</span> <span class="fu">tibble</span>(original_vars, <span class="fu">as_tibble</span>(pca_fit<span class="sc">$</span>svd<span class="sc">$</span>V[, <span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>]))</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>auto_vec</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 14 × 5
+   original_vars              V1       V2      V3       V4
+   &lt;chr&gt;                   &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
+ 1 CO2_Agri              0.426    0.0547   0.104   0.177  
+ 2 CO2_Min               0.323   -0.0534   0.270  -0.275  
+ 3 CO2_Transp            0.446    0.0648   0.0692  0.00245
+ 4 CO2_Domestico         0.449    0.109    0.0569  0.0820 
+ 5 Transporte carretera -0.0275   0.238    0.0957 -0.720  
+ 6 Renta_P_C             0.0294  -0.224   -0.287  -0.161  
+ 7 I_Produc_M           -0.159   -0.00173  0.515   0.0126 
+ 8 Pob_T                 0.450    0.124    0.0473  0.105  
+ 9 T_Desemp             -0.00422  0.114   -0.434   0.334  
+10 Mort_Inf             -0.0955   0.222    0.292   0.422  
+11 Edad Media            0.0802   0.492   -0.237  -0.138  
+12 Dif_Edad_G           -0.227    0.360    0.194   0.134  
+13 Tasa_Nac             -0.0110  -0.395    0.388   0.0638 
+14 T_Mort               -0.131    0.515    0.176   0.00292</code></pre>
+</div>
+</div>
+<p>Por tanto las ecuaciones de los distintos componentes son las siguientes:</p>
+<p><span class="math display">\[
+\begin{multline*}
+\Phi_{1} =
+0.425897105 \times \text{CO2\_Agri}
++ 0.323481483 \times \text{CO2\_Min}\\  
++ 0.445648014    \times \text{CO2\_Transp}
++ 0.448961525 \times \text{CO2\_Domestico}\\
+- 0.027534920   \times \text{Transporte carretera}
++ 0.029352470 \times \text{Renta\_P\_C}\\    
+- 0.159128051   \times \text{I\_Produc\_M}
++ 0.449901004 \times \text{Pob\_T}\\   
+- 0.004219013    \times \text{T\_Desemp}
+- 0.095495484 \times \text{Mort\_Inf}\\    
++ 0.080188861 \times \text{Edad Media}
+- 0.227421252 \times \text{Dif\_Edad\_G}\\
+- 0.010968751    \times \text{Tasa\_Nac}
+- 0.130545828 \times \text{T\_Mort}
+\end{multline*}
+\]</span></p>
+<p><span class="math display">\[
+\begin{multline*}
+\Phi_{2} =
+0.054691339 \times \text{CO2\_Agri}
+- 0.053441318 \times \text{CO2\_Min}\\  
++ 0.064791530    \times \text{CO2\_Transp}
++ 0.109209310 \times \text{CO2\_Domestico}\\
++ 0.237686119   \times \text{Transporte carretera}
+- 0.224378950 \times \text{Renta\_P\_C}\\    
+- 0.001730536   \times \text{I\_Produc\_M}
++ 0.124281631 \times \text{Pob\_T}\\   
++ 0.114090735    \times \text{T\_Desemp}
++ 0.222050177 \times \text{Mort\_Inf}\\    
++ 0.492145271 \times \text{Edad Media}
++ 0.359839721 \times \text{Dif\_Edad\_G}\\
+- 0.395410684    \times \text{Tasa\_Nac}
++ 0.515145188    \times \text{T\_Mort}
+\end{multline*}
+\]</span></p>
+<p><span class="math display">\[
+\begin{multline*}
+\Phi_{3} =
+0.10415088 \times \text{CO2\_Agri}
++ 0.27040075 \times \text{CO2\_Min}\\  
++ 0.06921754     \times \text{CO2\_Transp}
++ 0.05685151 \times \text{CO2\_Domestico}\\
++ 0.09574450    \times \text{Transporte carretera}
+- 0.28734428 \times \text{Renta\_P\_C}\\    
++ 0.51532058    \times \text{I\_Produc\_M}
++ 0.04727048 \times \text{Pob\_T}\\   
+- 0.43381615     \times \text{T\_Desemp}
++ 0.29169783 \times \text{Mort\_Inf}\\    
+- 0.23677355 \times \text{Edad Media}
++ 0.19418577 \times \text{Dif\_Edad\_G}\\
++ 0.38793569    \times \text{Tasa\_Nac}
++ 0.17590143    \times \text{T\_Mort}
+\end{multline*}
+\]</span></p>
+<p><span class="math display">\[
+\begin{multline*}
+\Phi_{4} =
+0.176518745 \times \text{CO2\_Agri}
+- 0.275467346 \times \text{CO2\_Min}\\  
++ 0.002449672    \times \text{CO2\_Transp}
++ 0.082033771 \times \text{CO2\_Domestico}\\
+- 0.720037174   \times \text{Transporte carretera}
+- 0.161082981 \times \text{Renta\_P\_C}\\    
++ 0.012586572   \times \text{I\_Produc\_M}
++ 0.105219452 \times \text{Pob\_T}\\   
++ 0.333558185    \times \text{T\_Desemp}
++ 0.422054008 \times \text{Mort\_Inf}\\    
+- 0.138071749 \times \text{Edad Media}
++ 0.134381139 \times \text{Dif\_Edad\_G}\\
++ 0.063806381   \times \text{Tasa\_Nac}
++ 0.002918671   \times \text{T\_Mort}
+\end{multline*}
+\]</span> Para saber con que variable está más correlada la segunda componente se va a visualizar el gráfico de correlación entre las variables originales y los nuevos componentes que han surgido a partir del PCA y nos vamos a centrar en el segundo componente.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>comp_corr_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="fu">t</span>(pca_fit<span class="sc">$</span>var<span class="sc">$</span>coord))</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>comp_corr_data <span class="ot">&lt;-</span> comp_corr_data <span class="sc">|&gt;</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Componentes =</span> <span class="fu">as.factor</span>(<span class="fu">rownames</span>(comp_corr_data))) <span class="sc">|&gt;</span> </span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(Componentes <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Dim.1"</span>,<span class="st">"Dim.2"</span>,<span class="st">"Dim.3"</span>,<span class="st">"Dim.4"</span>))</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a><span class="fu">ggparcoord</span>(comp_corr_data,</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>           <span class="at">columns =</span> <span class="dv">1</span><span class="sc">:</span>(<span class="fu">ncol</span>(comp_corr_data)<span class="sc">-</span><span class="dv">1</span>), </span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>           <span class="at">groupColumn =</span> <span class="st">"Componentes"</span>,</span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>           <span class="at">scale =</span> <span class="st">"globalminmax"</span>,</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>           <span class="at">showPoints =</span> <span class="cn">TRUE</span>) <span class="sc">+</span> </span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>           <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Gráfico de correlación"</span>,</span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>                <span class="at">subtitle =</span> <span class="st">"Coeficientes de correlación entre las variables y componentes"</span>,</span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>                <span class="at">x =</span> <span class="st">"Variables"</span>,</span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>                <span class="at">y =</span> <span class="st">"Correlación"</span>)<span class="sc">+</span></span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>           <span class="fu">theme_ipsum</span>()<span class="sc">+</span></span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>           <span class="fu">theme</span>(<span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">size=</span><span class="dv">15</span>),</span>
+<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a>                 <span class="at">plot.subtitle =</span> <span class="fu">element_text</span>(<span class="at">size=</span><span class="dv">10</span>),</span>
+<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a>                 <span class="at">axis.line =</span> <span class="fu">element_line</span>(<span class="at">color=</span><span class="st">"black"</span>),</span>
+<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a>                 <span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">8</span>, <span class="at">angle =</span> <span class="dv">90</span>),</span>
+<span id="cb25-21"><a href="#cb25-21" aria-hidden="true" tabindex="-1"></a>                 <span class="at">axis.text.y =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">8</span>),</span>
+<span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a>                 <span class="at">legend.position =</span> <span class="st">"bottom"</span>,</span>
+<span id="cb25-23"><a href="#cb25-23" aria-hidden="true" tabindex="-1"></a>                 <span class="at">legend.background =</span> <span class="fu">element_rect</span>(<span class="at">color =</span> <span class="st">"black"</span>,</span>
+<span id="cb25-24"><a href="#cb25-24" aria-hidden="true" tabindex="-1"></a>                                     <span class="at">fill =</span> <span class="st">"white"</span>,</span>
+<span id="cb25-25"><a href="#cb25-25" aria-hidden="true" tabindex="-1"></a>                                     <span class="at">linewidth =</span> <span class="fl">0.5</span>,</span>
+<span id="cb25-26"><a href="#cb25-26" aria-hidden="true" tabindex="-1"></a>                                     <span class="at">linetype =</span> <span class="st">"solid"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Enunciado_PCA_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Podemos observar que la segunda componente está fuertemente relacionada de forma positiva con la Edad_Media, Dif_Edad_G y con la T_Mort, mientras que de manera inversa, está muy relacionada con la Tasa_Nac.</p>
+<p>Por lo tanto podemos deducir que esta segunda componente representa la edad de la población, la diferencia de edad entre hombres y mujeres y la tasa de mortalidad. También se relaciona con la natalidad de forma inversa.</p>
+<p>En cuanto al resto de componentes y su relación con las variables originales:</p>
+<ul>
+<li><p><strong>La primera componente</strong> está fuertemente relacionada de forma positiva con las variables CO2_Agri, CO2_Min, CO2_Transp, CO2_Domestico y Pob_T por tanto podemos deducir que representa la relación entre las emisiones de C02 y la población de los países.</p></li>
+<li><p><strong>La tercera componente</strong> tiene una fuerte relación positiva con I_Product_M y Tasa_Nac e inversa con T_Desempleo por lo que representa la relación entre la producción de la industria y la tasa de desempleo en el país que además refleja una fuerte relación de estas dos variables con la natalidad.</p></li>
+<li><p><strong>La cuarta componente</strong> únicamente destaca en una correlación negativa con la variable de Transporte carretera que representa la información de forma inversa del transporte por este medio.</p></li>
+</ul>
+<p>Visualizamos la relación de los nuevos componentes del PCA con los distintos países</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>scores <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="st">"País"</span> <span class="ot">=</span> euro_contam_std<span class="sc">$</span>País,<span class="fu">as_tibble</span>(pca_fit<span class="sc">$</span>ind<span class="sc">$</span>coord[,<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>]))</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="fu">datatable</span>(scores , <span class="at">rownames =</span> <span class="cn">FALSE</span>, <span class="at">filter =</span> <span class="st">"top"</span>,</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">options =</span> <span class="fu">list</span>(<span class="at">pageLength =</span> <span class="dv">10</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>          <span class="fu">formatStyle</span>(<span class="fu">names</span>(scores))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="datatables html-widget html-fill-item" id="htmlwidget-b811ce2065e3d3ea5d0b" style="width:100%;height:auto;"></div>
+<script type="application/json" data-for="htmlwidget-b811ce2065e3d3ea5d0b">{"x":{"filter":"top","vertical":false,"filterHTML":"<tr>\n  <td data-type=\"character\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none;position: absolute;width: 200px;opacity: 1\">\n      <div data-min=\"-2.30518079655295\" data-max=\"5.58621971684774\" data-scale=\"15\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none;position: absolute;width: 200px;opacity: 1\">\n      <div data-min=\"-4.31741461481819\" data-max=\"3.03291611451209\" data-scale=\"15\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none;position: absolute;width: 200px;opacity: 1\">\n      <div data-min=\"-3.09933277462739\" data-max=\"2.32959799991183\" data-scale=\"15\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n  <td data-type=\"number\" style=\"vertical-align: top;\">\n    <div class=\"form-group has-feedback\" style=\"margin-bottom: auto;\">\n      <input type=\"search\" placeholder=\"All\" class=\"form-control\" style=\"width: 100%;\"/>\n      <span class=\"glyphicon glyphicon-remove-circle form-control-feedback\"><\/span>\n    <\/div>\n    <div style=\"display: none;position: absolute;width: 200px;opacity: 1\">\n      <div data-min=\"-2.1051629837897\" data-max=\"2.08242807054846\" data-scale=\"15\"><\/div>\n      <span style=\"float: left;\"><\/span>\n      <span style=\"float: right;\"><\/span>\n    <\/div>\n  <\/td>\n<\/tr>","data":[["Austria","Belgium","Bulgaria","Cyprus","Czech Republic","Denmark","Estonia","Finland","France","Germany","Greece","Hungary","Ireland","Italy","Latvia","Lithuania","Luxembourg","Malta","Netherlands","Poland","Portugal","Romania","Slovakia","Slovenia","Spain","Sweden","United Kingdom"],[-0.6445123036477157,-0.6070966055095629,-1.811720316035893,-0.8847065305757447,-0.5372436558241281,-0.03887606121651811,-2.025056302056796,-0.690365986198921,3.534944734227204,5.586219716847741,-0.6806833780272852,-1.426801711523638,-1.032086006551045,2.963933785476913,-2.305180796552953,-2.274596536121827,-0.9534593309584469,-1.17860365928986,0.9203086026377143,2.301866705677888,-0.7875868718721224,-1.065938703992431,-1.827822408826558,-1.244547021517265,1.879464081680062,-0.2870609727496602,5.11720753250085],[-0.3821201985018519,-0.1250094868724788,3.032916114512092,-2.777095667758322,-0.257065347383799,-0.8159418991926531,-0.06038726444085277,-0.2759050104803475,0.1220158077590965,2.225305438527272,1.577103688518823,1.65697193176626,-4.317414614818188,1.40356483250602,1.810563437997657,2.23909235386576,-2.932026553046213,-0.8623258013254885,-0.8369605449465245,-1.517182714051592,1.168543287506863,1.531140727548057,-0.1147282808632599,0.3353465997848418,0.9023672655832937,-1.655700823943487,-1.075067278250977],[-0.7460624548062706,-0.1737562761926619,1.096081837078996,-1.566120114782831,0.9996535641948496,0.02856639764415612,0.5307240266486748,-1.330704126703031,0.8578144655927743,0.4213536334850083,-3.09933277462739,0.9022771903391879,2.087914330697287,-2.471331166422006,1.094330915626432,1.363862942569395,-1.767899440447091,-0.3950400086143374,-0.5686647054936355,1.896475288338046,-1.628297304201528,2.329597999911825,1.472973974338197,-0.5821755768253304,-1.982633289166099,-0.7789736674015195,2.009364339218905],[-0.242747757003768,-1.930543214173492,0.3609116301604396,1.430096949506293,-1.377966330695388,0.2964957745627534,0.5997779941856534,-0.207715724549165,2.082428070548458,-0.1252295201512828,0.5798146612386427,-0.9606324878698054,1.428668125590179,0.440046635568448,0.09569601797491398,-0.0740191465037239,-0.6102281090052984,0.6225107368182968,-0.4999137401774008,-1.962097139671092,0.03302841323471321,1.722678306728435,0.5917466705115719,-2.105162983789704,0.8213903811033663,-0.479217899300918,-0.5298163148411268]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th>País<\/th>\n      <th>Dim.1<\/th>\n      <th>Dim.2<\/th>\n      <th>Dim.3<\/th>\n      <th>Dim.4<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"pageLength":10,"columnDefs":[{"className":"dt-right","targets":[1,2,3,4]},{"name":"País","targets":0},{"name":"Dim.1","targets":1},{"name":"Dim.2","targets":2},{"name":"Dim.3","targets":3},{"name":"Dim.4","targets":4}],"order":[],"autoWidth":false,"orderClasses":false,"orderCellsTop":true,"rowCallback":"function(row, data, displayNum, displayIndex, dataIndex) {\n}"}},"evals":["options.rowCallback"],"jsHooks":[]}</script>
+</div>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggpairs</span>(scores[, <span class="fu">c</span>(<span class="st">"Dim.1"</span>, <span class="st">"Dim.2"</span>, <span class="st">"Dim.3"</span>, <span class="st">"Dim.4"</span>)],</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>       <span class="at">upper =</span> <span class="fu">list</span>(<span class="at">continuous =</span> <span class="st">"blank"</span>)) <span class="sc">+</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">"Gráfico de pares de los componentes principales"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Enunciado_PCA_files/figure-html/unnamed-chunk-16-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Para mostrar y explicar en detalle la relación entre las variables originales y los nuevos componentes se va a poner de ejemplo la primera componente.</p>
+<p><strong>En cuanto a la primera componente</strong></p>
+<p>En este primer gráfico donde se relaciona el <em>primer componente</em> con el <em>segundo</em> se muestra una distribución de los países basada en estas dos componentes. Los países como Bulgaria, Lituania, Letonia se encuentran en la parte superior y a la izquierda, indicando que tienen poblaciones más pequeñas con tasas de natalidad más altas. Mientras que países como Francia, Italia, Alemania, España están ubicados en la parte central o derecha, lo que indica mayores emisiones de CO2 y poblaciones más grandes.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>scores <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="st">"País"</span> <span class="ot">=</span> euro_contam_std<span class="sc">$</span>País,<span class="fu">as_tibble</span>(pca_fit<span class="sc">$</span>ind<span class="sc">$</span>coord[,<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>]))</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(scores, <span class="fu">aes</span>(<span class="at">x=</span>Dim<span class="fl">.1</span>, <span class="at">y=</span>Dim<span class="fl">.2</span>)) <span class="sc">+</span> </span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>         <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>         <span class="fu">geom_text</span>(</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>           <span class="at">label=</span>scores<span class="sc">$</span>País,</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>           <span class="at">nudge_x =</span> <span class="fl">0.25</span>,</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>           <span class="at">nudge_y =</span> <span class="fl">0.25</span>,</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>           <span class="at">check_overlap =</span> <span class="cn">TRUE</span></span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>         )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Enunciado_PCA_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Siguiendo la explicación del primer gráfico, en este segundo se relaciona el <em>tercer componente</em> con el <em>primero</em>. Los países como Francia, Italia, Alemania, España mencionados anteriormente se ubican en la parte de la derecha indicando mayores emisiones y poblaciones más grandes.Además se refleja como existe una relación entre la producción industrial, natalidad y el desempleo, ya que los países con mayor producción industrial y natalidad también tienden a mostrar un desempleo relativamente bajo, mientras que aquellos con menor producción industrial y natalidad más baja, presentan tasas de desempleo más altas.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>scores <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="st">"País"</span> <span class="ot">=</span> euro_contam_std<span class="sc">$</span>País,<span class="fu">as_tibble</span>(pca_fit<span class="sc">$</span>ind<span class="sc">$</span>coord[,<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">3</span>)]))</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(scores, <span class="fu">aes</span>(<span class="at">x=</span>Dim<span class="fl">.1</span>, <span class="at">y=</span>Dim<span class="fl">.3</span>)) <span class="sc">+</span> </span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>         <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>         <span class="fu">geom_text</span>(</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>           <span class="at">label=</span>scores<span class="sc">$</span>País,</span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>           <span class="at">nudge_x =</span> <span class="fl">0.25</span>,</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>           <span class="at">nudge_y =</span> <span class="fl">0.25</span>,</span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>           <span class="at">check_overlap =</span> <span class="cn">TRUE</span></span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>         )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Enunciado_PCA_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>En esta última gráfica se establece una relación de las emisiones de C02 y la población con la dependencia del transporte por carretera. Países como Reino Unido y Alemania están en un extremo alto en la primera componente y valores intermedios en la cuarta componente, lo que indica una altas emisiones de C02 y mayor población pero una menor dependencia del transporte por carretera.</p>
+<p>Por ejemplo Polonia y Eslovenia tienen valores negativos en la cuarta componente y más bajos en la primera, lo que indica una dependencia mayor del transporte por carretera y emisiones más bajas</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>scores <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="st">"País"</span> <span class="ot">=</span> euro_contam_std<span class="sc">$</span>País,<span class="fu">as_tibble</span>(pca_fit<span class="sc">$</span>ind<span class="sc">$</span>coord[,<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">4</span>)]))</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(scores, <span class="fu">aes</span>(<span class="at">x=</span>Dim<span class="fl">.1</span>, <span class="at">y=</span>Dim<span class="fl">.4</span>)) <span class="sc">+</span> </span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>         <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>         <span class="fu">geom_text</span>(</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>           <span class="at">label=</span>scores<span class="sc">$</span>País,</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>           <span class="at">nudge_x =</span> <span class="fl">0.25</span>,</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>           <span class="at">nudge_y =</span> <span class="fl">0.25</span>,</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>           <span class="at">check_overlap =</span> <span class="cn">TRUE</span></span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>         )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Enunciado_PCA_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

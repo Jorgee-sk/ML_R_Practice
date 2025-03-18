@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.57">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Jorge Galiano García">
+
+<title>caption Prática 1: Tidyverse y gglot</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="Enunciado_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Enunciado_files/libs/quarto-html/quarto.js"></script>
+<script src="Enunciado_files/libs/quarto-html/popper.min.js"></script>
+<script src="Enunciado_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Enunciado_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Enunciado_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Enunciado_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Enunciado_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Enunciado_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Enunciado_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Índice</h2>
+   
+  <ul>
+  <li><a href="#instrucciones-leer-antes-de-empezar" id="toc-instrucciones-leer-antes-de-empezar" class="nav-link active" data-scroll-target="#instrucciones-leer-antes-de-empezar">Instrucciones (leer antes de empezar)</a>
+  <ul class="collapse">
+  <li><a href="#paquetes-necesarios" id="toc-paquetes-necesarios" class="nav-link" data-scroll-target="#paquetes-necesarios">Paquetes necesarios</a></li>
+  </ul></li>
+  <li><a href="#caso-práctico-i-análisis-de-datos-unesco" id="toc-caso-práctico-i-análisis-de-datos-unesco" class="nav-link" data-scroll-target="#caso-práctico-i-análisis-de-datos-unesco">Caso práctico I: Análisis de datos UNESCO</a>
+  <ul class="collapse">
+  <li><a href="#ejercicio-1" id="toc-ejercicio-1" class="nav-link" data-scroll-target="#ejercicio-1">Ejercicio 1</a></li>
+  <li><a href="#ejercicio-2" id="toc-ejercicio-2" class="nav-link" data-scroll-target="#ejercicio-2">Ejercicio 2</a></li>
+  <li><a href="#ejercicio-3" id="toc-ejercicio-3" class="nav-link" data-scroll-target="#ejercicio-3">Ejercicio 3</a></li>
+  <li><a href="#ejercicio-4" id="toc-ejercicio-4" class="nav-link" data-scroll-target="#ejercicio-4">Ejercicio 4</a></li>
+  <li><a href="#ejercicio-5" id="toc-ejercicio-5" class="nav-link" data-scroll-target="#ejercicio-5">Ejercicio 5</a></li>
+  <li><a href="#ejercicio-6" id="toc-ejercicio-6" class="nav-link" data-scroll-target="#ejercicio-6">Ejercicio 6</a></li>
+  <li><a href="#ejercicio-7" id="toc-ejercicio-7" class="nav-link" data-scroll-target="#ejercicio-7">Ejercicio 7</a></li>
+  <li><a href="#ejercicio-8" id="toc-ejercicio-8" class="nav-link" data-scroll-target="#ejercicio-8">Ejercicio 8</a></li>
+  <li><a href="#ejercicio-9" id="toc-ejercicio-9" class="nav-link" data-scroll-target="#ejercicio-9">Ejercicio 9</a></li>
+  </ul></li>
+  <li><a href="#caso-práctico-ii-gráficos" id="toc-caso-práctico-ii-gráficos" class="nav-link" data-scroll-target="#caso-práctico-ii-gráficos">Caso práctico II: Gráficos</a>
+  <ul class="collapse">
+  <li><a href="#ejercicio-1-1" id="toc-ejercicio-1-1" class="nav-link" data-scroll-target="#ejercicio-1-1">Ejercicio 1:</a></li>
+  <li><a href="#ejercicio-2-1" id="toc-ejercicio-2-1" class="nav-link" data-scroll-target="#ejercicio-2-1">Ejercicio 2:</a></li>
+  <li><a href="#ejercicio-3-1" id="toc-ejercicio-3-1" class="nav-link" data-scroll-target="#ejercicio-3-1">Ejercicio 3:</a></li>
+  <li><a href="#ejercicio-4-1" id="toc-ejercicio-4-1" class="nav-link" data-scroll-target="#ejercicio-4-1">Ejercicio 4:</a></li>
+  <li><a href="#ejercicio-5-1" id="toc-ejercicio-5-1" class="nav-link" data-scroll-target="#ejercicio-5-1">Ejercicio 5:</a></li>
+  <li><a href="#ejercicio-6-1" id="toc-ejercicio-6-1" class="nav-link" data-scroll-target="#ejercicio-6-1">Ejercicio 6:</a></li>
+  <li><a href="#ejercicio-7-1" id="toc-ejercicio-7-1" class="nav-link" data-scroll-target="#ejercicio-7-1">Ejercicio 7</a></li>
+  <li><a href="#ejercicio-8-1" id="toc-ejercicio-8-1" class="nav-link" data-scroll-target="#ejercicio-8-1">Ejercicio 8</a></li>
+  <li><a href="#ejercicio-9-1" id="toc-ejercicio-9-1" class="nav-link" data-scroll-target="#ejercicio-9-1">Ejercicio 9</a></li>
+  <li><a href="#ejercicio-10" id="toc-ejercicio-10" class="nav-link" data-scroll-target="#ejercicio-10">Ejercicio 10</a></li>
+  </ul></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title"><img src="./img/icon_batman.png" class="img-fluid" alt="caption"> Prática 1: Tidyverse y gglot</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Jorge Galiano García </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="instrucciones-leer-antes-de-empezar" class="level2">
+<h2 class="anchored" data-anchor-id="instrucciones-leer-antes-de-empezar">Instrucciones (leer antes de empezar)</h2>
+<ul>
+<li><p>Modifica dentro del documento <code>.qmd</code> vuestros datos personales (nombre y apellidos, ordenados por apellido) ubicados en la cabecera del archivo.</p></li>
+<li><p>Asegúrate, <strong>ANTES de seguir editando</strong> el documento, que el archivo <code>.qmd</code> se renderiza correctamente y se genera el <code>.html</code> correspondiente en tu carpeta local de tu ordenador.</p></li>
+<li><p>Algún chunk (caja de código) creado puede estar vacío o incompleto, de ahí que puedan tener la opción <code>#| eval: false</code>. Una vez que edites lo que consideres, debes ir cambiando cada chunck como consideres.</p></li>
+<li><p>Recuerda que puedes ejecutar chunk a chunk con el botón <em>play</em> o ejecutar todos los chunk hasta uno dado (con el botón a la izquierda del anterior).</p></li>
+</ul>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Aviso para que nadie se lleve luego las manos a la cabeza 😇😇😇
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li>Tenéis que <strong>subir un archivo (carpeta) <code>.zip</code></strong> que contenga el archivo <code>.qmd</code>, el archivo de estilos <code>style.scss</code> y todas las dependencias que hayáis utilizado (<code>ficheros</code>, <code>imágenes</code>, <code>funciones</code>, etc). Tanto esta carpeta comprimida como el archivo <code>.qmd</code> deben estar nombrados como:</li>
+</ul>
+<p><code>practica_{número_práctica}_{nombre1}_{nombre2}_{nombre3}</code>.</p>
+<ul>
+<li><p><strong>Lo primero que haré será ejecutar vuestro archivo <code>.qmd</code> para ejecutar el código</strong>, por lo que será requisito necesario (aunque no suficiente) que pueda generar <strong>sin problemas</strong> el <code>.html</code> correspondiente.</p></li>
+<li><p>Salvo el caso anterior (y algún caso excepcional) <strong>NUNCA voy a revisar los códigos</strong> <code>.qmd</code>. Por lo que en el <code>.html</code> deben figurar tanto las soluciones a los ejercicios propuesto como sus códigos respectivos.</p></li>
+<li><p>Aunque no es ni mucho menos el objetivo ni de esta ni de otras entregas, la <strong>limpieza y el orden</strong> (explicaciones, presentación, código legible, ordenado y comentado, etc) <strong>se valorarán positivamente</strong>.</p></li>
+</ul>
+</div>
+</div>
+<section id="paquetes-necesarios" class="level3">
+<h3 class="anchored" data-anchor-id="paquetes-necesarios">Paquetes necesarios</h3>
+<p>Necesitaremos los siguientes paquetes (haz play en el chunk para que se carguen):</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Borramos variables de environment</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()) </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># descomentar si es la primera vez (y requieren instalación)</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># install.packages("glue")</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># install.packages("dplyr")</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># install.packages("gapminder")</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(glue)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggridges)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="caso-práctico-i-análisis-de-datos-unesco" class="level2">
+<h2 class="anchored" data-anchor-id="caso-práctico-i-análisis-de-datos-unesco">Caso práctico I: Análisis de datos UNESCO</h2>
+<p>El archivo de datos a usar será <code>student_ratio.csv</code>.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Recomendación
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Recordad que, independientemente de si os encontréis en esta asignatura o en la vida real, siempre hay que ser organizado. Intentad que todos los <strong>elementos</strong> que utilicéis estén <strong>organizados</strong>.</p>
+</div>
+</div>
+<section id="ejercicio-1" class="level3">
+<h3 class="anchored" data-anchor-id="ejercicio-1">Ejercicio 1</h3>
+<blockquote class="blockquote">
+<p>Determina el porcentaje de registros correspondientes a cada nivel educativo</p>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>student_data <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="at">file =</span> <span class="st">"./datos/student_ratio.csv"</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>student_ratio_percentage <span class="ot">&lt;-</span> student_data <span class="sc">|&gt;</span> <span class="fu">drop_na</span>(indicator) <span class="sc">|&gt;</span> <span class="fu">count</span>(indicator, <span class="at">sort =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span>  <span class="fu">mutate</span>(<span class="at">percent =</span> (n<span class="sc">/</span><span class="fu">sum</span>(n))<span class="sc">*</span><span class="dv">100</span>, <span class="at">.before =</span> n) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">n=</span><span class="cn">NULL</span>) <span class="sc">|&gt;</span> <span class="fu">rename</span>(<span class="at">nivel_educativo =</span> indicator)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>student_ratio_percentage</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 7 × 2
+  nivel_educativo                       percent
+  &lt;chr&gt;                                   &lt;dbl&gt;
+1 Primary Education                       19.8 
+2 Secondary Education                     16.2 
+3 Pre-Primary Education                   16.1 
+4 Lower Secondary Education               14.2 
+5 Upper Secondary Education               13.5 
+6 Tertiary Education                      10.6 
+7 Post-Secondary Non-Tertiary Education    9.52</code></pre>
+</div>
+</div>
+</section>
+<section id="ejercicio-2" class="level3">
+<h3 class="anchored" data-anchor-id="ejercicio-2">Ejercicio 2</h3>
+<blockquote class="blockquote">
+<p>Por cada nivel educativo, determina el territorio con mayor ratio y peor ratio. Repítelo por nivel educativo y año.</p>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>student_data <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="at">file =</span> <span class="st">"./datos/student_ratio.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Por nivel educativo, territorio con mayor ratio:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>student_data <span class="sc">|&gt;</span> <span class="fu">drop_na</span>(student_ratio) <span class="sc">|&gt;</span> <span class="fu">slice_max</span>(student_ratio, <span class="at">by =</span> indicator)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 7 × 6
+  edulit_ind indicator                  country_code country  year student_ratio
+  &lt;chr&gt;      &lt;chr&gt;                      &lt;chr&gt;        &lt;chr&gt;   &lt;dbl&gt;         &lt;dbl&gt;
+1 PTRHC_2    Lower Secondary Education  MRT          Maurit…  2013          56.6
+2 PTRHC_1    Primary Education          CAF          Centra…  2016          83.4
+3 PTRHC_3    Upper Secondary Education  PNG          Papua …  2016          83.3
+4 PTRHC_02   Pre-Primary Education      TZA          United…  2017         114. 
+5 PTRHC_2T3  Secondary Education        CAF          Centra…  2012          68.1
+6 PTRHC_5T8  Tertiary Education         SYR          Syrian…  2015          64.4
+7 PTRHC_4    Post-Secondary Non-Tertia… CZE          Czechia  2013         169. </code></pre>
+</div>
+</div>
+<p>Por nivel educativo, territorio con menor ratio:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>student_data <span class="sc">|&gt;</span> <span class="fu">drop_na</span>(student_ratio) <span class="sc">|&gt;</span> <span class="fu">slice_min</span>(student_ratio, <span class="at">by =</span> indicator)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 7 × 6
+  edulit_ind indicator                  country_code country  year student_ratio
+  &lt;chr&gt;      &lt;chr&gt;                      &lt;chr&gt;        &lt;chr&gt;   &lt;dbl&gt;         &lt;dbl&gt;
+1 PTRHC_2    Lower Secondary Education  BMU          Bermuda  2014          4.58
+2 PTRHC_1    Primary Education          SMR          San Ma…  2012          6.27
+3 PTRHC_3    Upper Secondary Education  NIU          Niue     2015          3.5 
+4 PTRHC_02   Pre-Primary Education      TKL          Tokelau  2016          4.33
+5 PTRHC_2T3  Secondary Education        BMU          Bermuda  2014          4.98
+6 PTRHC_5T8  Tertiary Education         GRD          Grenada  2017          1.16
+7 PTRHC_4    Post-Secondary Non-Tertia… KGZ          Kyrgyz…  2013          1.36</code></pre>
+</div>
+</div>
+<p>Por nivel educativo y año, territorio con mayor ratio:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>student_data <span class="sc">|&gt;</span> <span class="fu">drop_na</span>(student_ratio) <span class="sc">|&gt;</span> <span class="fu">slice_max</span>(student_ratio, <span class="at">by =</span> <span class="fu">c</span>(indicator, year))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 49 × 6
+   edulit_ind indicator                 country_code country  year student_ratio
+   &lt;chr&gt;      &lt;chr&gt;                     &lt;chr&gt;        &lt;chr&gt;   &lt;dbl&gt;         &lt;dbl&gt;
+ 1 PTRHC_2    Lower Secondary Education MRT          Maurit…  2013          56.6
+ 2 PTRHC_2    Lower Secondary Education MRT          Maurit…  2014          51.9
+ 3 PTRHC_2    Lower Secondary Education MRT          Maurit…  2015          53.2
+ 4 PTRHC_2    Lower Secondary Education BGD          Bangla…  2016          41.1
+ 5 PTRHC_1    Primary Education         CAF          Centra…  2012          80.1
+ 6 PTRHC_1    Primary Education         MWI          Malawi   2013          69.1
+ 7 PTRHC_1    Primary Education         MWI          Malawi   2014          72.7
+ 8 PTRHC_1    Primary Education         MWI          Malawi   2015          69.5
+ 9 PTRHC_3    Upper Secondary Education ERI          Eritrea  2013          36.8
+10 PTRHC_02   Pre-Primary Education     TZA          United…  2012         113. 
+# ℹ 39 more rows</code></pre>
+</div>
+</div>
+<p>Por nivel educativo y año, territorio con menor ratio:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>student_data <span class="sc">|&gt;</span> <span class="fu">drop_na</span>(student_ratio) <span class="sc">|&gt;</span> <span class="fu">slice_min</span>(student_ratio, <span class="at">by =</span> <span class="fu">c</span>(indicator, year))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 49 × 6
+   edulit_ind indicator                 country_code country  year student_ratio
+   &lt;chr&gt;      &lt;chr&gt;                     &lt;chr&gt;        &lt;chr&gt;   &lt;dbl&gt;         &lt;dbl&gt;
+ 1 PTRHC_2    Lower Secondary Education BMU          Bermuda  2013          4.95
+ 2 PTRHC_2    Lower Secondary Education BMU          Bermuda  2014          4.58
+ 3 PTRHC_2    Lower Secondary Education BMU          Bermuda  2015          6.02
+ 4 PTRHC_2    Lower Secondary Education LIE          Liecht…  2016          5.63
+ 5 PTRHC_1    Primary Education         SMR          San Ma…  2012          6.27
+ 6 PTRHC_1    Primary Education         BMU          Bermuda  2013          7.19
+ 7 PTRHC_1    Primary Education         BMU          Bermuda  2014          6.72
+ 8 PTRHC_1    Primary Education         LIE          Liecht…  2015          7.85
+ 9 PTRHC_3    Upper Secondary Education BMU          Bermuda  2013          5.71
+10 PTRHC_02   Pre-Primary Education     ISL          Iceland  2012          5.03
+# ℹ 39 more rows</code></pre>
+</div>
+</div>
+</section>
+<section id="ejercicio-3" class="level3">
+<h3 class="anchored" data-anchor-id="ejercicio-3">Ejercicio 3</h3>
+<blockquote class="blockquote">
+<p>Realiza un muestreo aleatorio estratificado (por nivel educativo) del 30% de los datos. Tras realizarlo realiza las comprobaciones necesarios para chequear que, efectivamente, se ha realizado la estratificación de manera adecuada.</p>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>student_data <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="at">file =</span> <span class="st">"./datos/student_ratio.csv"</span>)</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>random_sampling <span class="ot">&lt;-</span> student_data <span class="sc">|&gt;</span> <span class="fu">drop_na</span>(indicator) <span class="sc">|&gt;</span> <span class="fu">slice_sample</span>(<span class="at">prop =</span> <span class="fl">0.3</span>, <span class="at">by=</span>indicator)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>random_sampling</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1,555 × 6
+   edulit_ind indicator                 country_code country  year student_ratio
+   &lt;chr&gt;      &lt;chr&gt;                     &lt;chr&gt;        &lt;chr&gt;   &lt;dbl&gt;         &lt;dbl&gt;
+ 1 PTRHC_2    Lower Secondary Education 40619        Asia (…  2012         15.3 
+ 2 PTRHC_2    Lower Secondary Education LIE          Liecht…  2016          5.63
+ 3 PTRHC_2    Lower Secondary Education 40043        Upper …  2017         13.7 
+ 4 PTRHC_2    Lower Secondary Education LCA          Saint …  2015         11.6 
+ 5 PTRHC_2    Lower Secondary Education 40515        East A…  2014         14.5 
+ 6 PTRHC_2    Lower Secondary Education VNM          Viet N…  2017         16.8 
+ 7 PTRHC_2    Lower Secondary Education 40612        Asia (…  2013          9.99
+ 8 PTRHC_2    Lower Secondary Education BHR          Bahrain  2013         11.1 
+ 9 PTRHC_2    Lower Secondary Education NZL          New Ze…  2014         14.7 
+10 PTRHC_2    Lower Secondary Education 40535        South …  2012         30.6 
+# ℹ 1,545 more rows</code></pre>
+</div>
+</div>
+<p>Para comprobar que la estratificación por nivel educativo del 30% de los datos se ha realizado de forma correcta, hay que comparar las proporciones en cada nivel educativo se mantienen respecto al 100% de los datos.</p>
+<p>Porcentajes en el 30% de los datos:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>random_sampling <span class="sc">|&gt;</span> <span class="fu">drop_na</span>(indicator) <span class="sc">|&gt;</span> <span class="fu">count</span>(indicator, <span class="at">sort =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span>  <span class="fu">mutate</span>(<span class="at">percent =</span> (n<span class="sc">/</span><span class="fu">sum</span>(n))<span class="sc">*</span><span class="dv">100</span>, <span class="at">.before =</span> n) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">n=</span><span class="cn">NULL</span>) <span class="sc">|&gt;</span> <span class="fu">rename</span>(<span class="at">nivel_educativo =</span> indicator)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 7 × 2
+  nivel_educativo                       percent
+  &lt;chr&gt;                                   &lt;dbl&gt;
+1 Primary Education                       19.8 
+2 Secondary Education                     16.2 
+3 Pre-Primary Education                   16.1 
+4 Lower Secondary Education               14.2 
+5 Upper Secondary Education               13.5 
+6 Tertiary Education                      10.6 
+7 Post-Secondary Non-Tertiary Education    9.52</code></pre>
+</div>
+</div>
+<p>Porcentajes en el 100% de los datos:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>student_data <span class="sc">|&gt;</span> <span class="fu">drop_na</span>(indicator) <span class="sc">|&gt;</span> <span class="fu">count</span>(indicator, <span class="at">sort =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span>  <span class="fu">mutate</span>(<span class="at">percent =</span> (n<span class="sc">/</span><span class="fu">sum</span>(n))<span class="sc">*</span><span class="dv">100</span>, <span class="at">.before =</span> n) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">n=</span><span class="cn">NULL</span>) <span class="sc">|&gt;</span> <span class="fu">rename</span>(<span class="at">nivel_educativo =</span> indicator)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 7 × 2
+  nivel_educativo                       percent
+  &lt;chr&gt;                                   &lt;dbl&gt;
+1 Primary Education                       19.8 
+2 Secondary Education                     16.2 
+3 Pre-Primary Education                   16.1 
+4 Lower Secondary Education               14.2 
+5 Upper Secondary Education               13.5 
+6 Tertiary Education                      10.6 
+7 Post-Secondary Non-Tertiary Education    9.52</code></pre>
+</div>
+</div>
+</section>
+<section id="ejercicio-4" class="level3">
+<h3 class="anchored" data-anchor-id="ejercicio-4">Ejercicio 4</h3>
+<blockquote class="blockquote">
+<p>Extrae (en un vector) la lista de territorios únicos de la tabla. Y muestra los 5 primeros.</p>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>student_data <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="at">file=</span><span class="st">"./datos/student_ratio.csv"</span>)</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>student_data <span class="sc">|&gt;</span> <span class="fu">distinct</span>(country) <span class="sc">|&gt;</span> <span class="fu">slice</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>) <span class="sc">|&gt;</span> <span class="fu">pull</span>(country)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Mauritania"                       "Democratic Republic of the Congo"
+[3] "Syrian Arab Republic"             "Equatorial Guinea"               
+[5] "Armenia"                         </code></pre>
+</div>
+</div>
+</section>
+<section id="ejercicio-5" class="level3">
+<h3 class="anchored" data-anchor-id="ejercicio-5">Ejercicio 5</h3>
+<blockquote class="blockquote">
+<p>Filtra la tabla para quedarte solo con datos correspondientes a países (no territorios), contando tan solo con registros del 2014 en adelante.</p>
+</blockquote>
+<div class="callout callout-style-default callout-caution callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Ayuda
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Si te fijas los países tienen un código de 3 letras, mientras que el resto es un “número“. Ya que os he dado esta pista, haced este filtro de dos maneras distintas.</p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>student_data <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="at">file=</span><span class="st">"./datos/student_ratio.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Se realiza un primer filtrado contando que el número de caracteres del campo country_code sea igual a 3 y contando solo registros del 2014 en adelante.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>student_data_filtered <span class="ot">&lt;-</span> student_data <span class="sc">|&gt;</span> <span class="fu">drop_na</span>(country) <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="fu">nchar</span>(country_code) <span class="sc">==</span> <span class="dv">3</span> <span class="sc">&amp;</span> year <span class="sc">&gt;=</span> <span class="dv">2014</span>)</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>student_data_filtered</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2,755 × 6
+   edulit_ind indicator                 country_code country  year student_ratio
+   &lt;chr&gt;      &lt;chr&gt;                     &lt;chr&gt;        &lt;chr&gt;   &lt;dbl&gt;         &lt;dbl&gt;
+ 1 PTRHC_2    Lower Secondary Education MRT          Maurit…  2014         51.9 
+ 2 PTRHC_2    Lower Secondary Education MRT          Maurit…  2015         53.2 
+ 3 PTRHC_2    Lower Secondary Education MRT          Maurit…  2016         38.2 
+ 4 PTRHC_1    Primary Education         COD          Democr…  2014         35.3 
+ 5 PTRHC_1    Primary Education         COD          Democr…  2015         33.2 
+ 6 PTRHC_02   Pre-Primary Education     GNQ          Equato…  2015         16.7 
+ 7 PTRHC_02   Pre-Primary Education     ARM          Armenia  2014          8.99
+ 8 PTRHC_02   Pre-Primary Education     ARM          Armenia  2015          8.73
+ 9 PTRHC_02   Pre-Primary Education     ARM          Armenia  2016          8.55
+10 PTRHC_02   Pre-Primary Education     ARM          Armenia  2017          8.39
+# ℹ 2,745 more rows</code></pre>
+</div>
+</div>
+<p>El segundo filtrado utiliza la función grepl mediante la cual se especifica una regex que sigue el tipo de caracter y la longitud de la cadena de texto por la que queremos filtrar en la columna country_code además de contar solo registros del 2014 en adelante.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>student_data_filtered <span class="ot">&lt;-</span> student_data <span class="sc">|&gt;</span> <span class="fu">drop_na</span>(country) <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="fu">grepl</span>(<span class="st">"^[A-Za-z]{3}$"</span>, country_code) <span class="sc">&amp;</span> year <span class="sc">&gt;=</span> <span class="dv">2014</span>)</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>student_data_filtered</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2,755 × 6
+   edulit_ind indicator                 country_code country  year student_ratio
+   &lt;chr&gt;      &lt;chr&gt;                     &lt;chr&gt;        &lt;chr&gt;   &lt;dbl&gt;         &lt;dbl&gt;
+ 1 PTRHC_2    Lower Secondary Education MRT          Maurit…  2014         51.9 
+ 2 PTRHC_2    Lower Secondary Education MRT          Maurit…  2015         53.2 
+ 3 PTRHC_2    Lower Secondary Education MRT          Maurit…  2016         38.2 
+ 4 PTRHC_1    Primary Education         COD          Democr…  2014         35.3 
+ 5 PTRHC_1    Primary Education         COD          Democr…  2015         33.2 
+ 6 PTRHC_02   Pre-Primary Education     GNQ          Equato…  2015         16.7 
+ 7 PTRHC_02   Pre-Primary Education     ARM          Armenia  2014          8.99
+ 8 PTRHC_02   Pre-Primary Education     ARM          Armenia  2015          8.73
+ 9 PTRHC_02   Pre-Primary Education     ARM          Armenia  2016          8.55
+10 PTRHC_02   Pre-Primary Education     ARM          Armenia  2017          8.39
+# ℹ 2,745 more rows</code></pre>
+</div>
+</div>
+</section>
+<section id="ejercicio-6" class="level3">
+<h3 class="anchored" data-anchor-id="ejercicio-6">Ejercicio 6</h3>
+<blockquote class="blockquote">
+<p>Considerando el dataset del ejercicio anterior, realiza un muestreo aleatorio del 10% de los datos, estratificado por año, de manera que la probabilidad de cada país de ser elegido en la muestra sea proporcional a su ratio medio (entre todos los niveles educativos, para cada uno de esos años).</p>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>student_data_sample <span class="ot">&lt;-</span> student_data_filtered <span class="sc">|&gt;</span> <span class="fu">drop_na</span>(student_ratio) <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">mean_ratio =</span> <span class="fu">mean</span>(student_ratio), <span class="at">.by =</span> <span class="fu">c</span>(year, country_code)) <span class="sc">|&gt;</span> <span class="fu">slice_sample</span>(<span class="at">prop =</span> <span class="fl">0.1</span>, <span class="at">by=</span>year, <span class="at">weight_by =</span> mean_ratio)</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>student_data_sample</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 251 × 7
+   edulit_ind indicator      country_code country  year student_ratio mean_ratio
+   &lt;chr&gt;      &lt;chr&gt;          &lt;chr&gt;        &lt;chr&gt;   &lt;dbl&gt;         &lt;dbl&gt;      &lt;dbl&gt;
+ 1 PTRHC_02   Pre-Primary E… HUN          Hungary  2014         12.8        11.9
+ 2 PTRHC_1    Primary Educa… ERI          Eritrea  2014         42.5        36.1
+ 3 PTRHC_2    Lower Seconda… GTM          Guatem…  2014         14.3        15.1
+ 4 PTRHC_3    Upper Seconda… SUR          Surina…  2014          8.65       15.0
+ 5 PTRHC_2T3  Secondary Edu… JAM          Jamaica  2014         16.5        19.3
+ 6 PTRHC_1    Primary Educa… KHM          Cambod…  2014         44.6        31.9
+ 7 PTRHC_2T3  Secondary Edu… MLI          Mali     2014         18.9        24.3
+ 8 PTRHC_2T3  Secondary Edu… SVN          Sloven…  2014         10.1        11.5
+ 9 PTRHC_2T3  Secondary Edu… COL          Colomb…  2014         24.9        22.6
+10 PTRHC_2T3  Secondary Edu… COD          Democr…  2014         14.6        24.8
+# ℹ 241 more rows</code></pre>
+</div>
+</div>
+</section>
+<section id="ejercicio-7" class="level3">
+<h3 class="anchored" data-anchor-id="ejercicio-7">Ejercicio 7</h3>
+<blockquote class="blockquote">
+<p>Considerando el dataset del ejercicio anterior, por cada uno de los países y nivel educativo, quédate solo con el último registro (el más reciente).</p>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>student_data_recent <span class="ot">&lt;-</span> student_data_sample <span class="sc">|&gt;</span> <span class="fu">slice_max</span>(year, <span class="at">n=</span><span class="dv">1</span>, <span class="at">by =</span> <span class="fu">c</span>(country_code, indicator))</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>student_data_recent</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 226 × 7
+   edulit_ind indicator      country_code country  year student_ratio mean_ratio
+   &lt;chr&gt;      &lt;chr&gt;          &lt;chr&gt;        &lt;chr&gt;   &lt;dbl&gt;         &lt;dbl&gt;      &lt;dbl&gt;
+ 1 PTRHC_02   Pre-Primary E… HUN          Hungary  2014         12.8        11.9
+ 2 PTRHC_1    Primary Educa… ERI          Eritrea  2014         42.5        36.1
+ 3 PTRHC_2    Lower Seconda… GTM          Guatem…  2016         14.2        14.6
+ 4 PTRHC_3    Upper Seconda… SUR          Surina…  2014          8.65       15.0
+ 5 PTRHC_2T3  Secondary Edu… JAM          Jamaica  2014         16.5        19.3
+ 6 PTRHC_1    Primary Educa… KHM          Cambod…  2014         44.6        31.9
+ 7 PTRHC_2T3  Secondary Edu… MLI          Mali     2015         19.2        24.7
+ 8 PTRHC_2T3  Secondary Edu… SVN          Sloven…  2014         10.1        11.5
+ 9 PTRHC_2T3  Secondary Edu… COL          Colomb…  2014         24.9        22.6
+10 PTRHC_2T3  Secondary Edu… COD          Democr…  2014         14.6        24.8
+# ℹ 216 more rows</code></pre>
+</div>
+</div>
+</section>
+<section id="ejercicio-8" class="level3">
+<h3 class="anchored" data-anchor-id="ejercicio-8">Ejercicio 8</h3>
+<blockquote class="blockquote">
+<p>Considerando solo los datos más recientes (los datos derivados del ejercicio anterior), obtén la mediana y media de la variable ratio, en general y por nivel educativo</p>
+</blockquote>
+<p>Se obtiene en primer lugar la mediana y la media de la variable student_ratio en general:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>student_data_recent <span class="sc">|&gt;</span> <span class="fu">summarise</span>(<span class="at">student_ratio_median =</span> <span class="fu">median</span>(student_ratio), <span class="at">student_ratio_mean =</span> <span class="fu">mean</span>(student_ratio))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 2
+  student_ratio_median student_ratio_mean
+                 &lt;dbl&gt;              &lt;dbl&gt;
+1                 18.7               22.9</code></pre>
+</div>
+</div>
+<p>Se obtiene la mediana y la media de la variable student_ratio por nivel educativo:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>student_data_recent <span class="sc">|&gt;</span> <span class="fu">summarise</span>(<span class="at">student_ratio_median =</span> <span class="fu">median</span>(student_ratio), <span class="at">student_ratio_mean =</span> <span class="fu">mean</span>(student_ratio), <span class="at">.by =</span> indicator)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 7 × 3
+  indicator                             student_ratio_median student_ratio_mean
+  &lt;chr&gt;                                                &lt;dbl&gt;              &lt;dbl&gt;
+1 Pre-Primary Education                                 18.0               24.6
+2 Primary Education                                     23.7               27.7
+3 Lower Secondary Education                             17.9               21.3
+4 Upper Secondary Education                             16.1               17.6
+5 Secondary Education                                   16.5               18.6
+6 Tertiary Education                                    18.1               19.9
+7 Post-Secondary Non-Tertiary Education                 13.5               35.9</code></pre>
+</div>
+</div>
+</section>
+<section id="ejercicio-9" class="level3">
+<h3 class="anchored" data-anchor-id="ejercicio-9">Ejercicio 9</h3>
+<blockquote class="blockquote">
+<p>Considerando solo los datos más recientes (los datos derivados del 7), ¿cuáles son los 5 países con un ratio más alto? ¿Y los 7 países con un ratio más bajo?</p>
+</blockquote>
+<p>Los 5 países con un ratio más alto:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>student_data_recent <span class="sc">|&gt;</span> <span class="fu">slice_max</span>(student_ratio, <span class="at">n=</span><span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 5 × 7
+  edulit_ind indicator       country_code country  year student_ratio mean_ratio
+  &lt;chr&gt;      &lt;chr&gt;           &lt;chr&gt;        &lt;chr&gt;   &lt;dbl&gt;         &lt;dbl&gt;      &lt;dbl&gt;
+1 PTRHC_4    Post-Secondary… LSO          Lesotho  2014         155         50.7
+2 PTRHC_02   Pre-Primary Ed… TZA          United…  2017         114.        59.4
+3 PTRHC_02   Pre-Primary Ed… GBR          United…  2016          73.3       27.2
+4 PTRHC_1    Primary Educat… MWI          Malawi   2015          69.5       49.8
+5 PTRHC_5T8  Tertiary Educa… SYR          Syrian…  2015          64.4       64.4</code></pre>
+</div>
+</div>
+<p>Los 7 países con un ratio más bajo:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>student_data_recent <span class="sc">|&gt;</span> <span class="fu">slice_min</span>(student_ratio, <span class="at">n=</span><span class="dv">7</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 7 × 7
+  edulit_ind indicator       country_code country  year student_ratio mean_ratio
+  &lt;chr&gt;      &lt;chr&gt;           &lt;chr&gt;        &lt;chr&gt;   &lt;dbl&gt;         &lt;dbl&gt;      &lt;dbl&gt;
+1 PTRHC_5T8  Tertiary Educa… CUB          Cuba     2014          4.60       8.06
+2 PTRHC_02   Pre-Primary Ed… SWE          Sweden   2014          5.52      16.1 
+3 PTRHC_3    Upper Secondar… HRV          Croatia  2016          6.06       9.43
+4 PTRHC_2    Lower Secondar… LIE          Liecht…  2015          6.15       9.98
+5 PTRHC_2    Lower Secondar… AZE          Azerba…  2017          6.56      11.8 
+6 PTRHC_4    Post-Secondary… BRB          Barbad…  2015          6.82      14.9 
+7 PTRHC_5T8  Tertiary Educa… DEU          Germany  2016          7.56      10.6 </code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="caso-práctico-ii-gráficos" class="level2">
+<h2 class="anchored" data-anchor-id="caso-práctico-ii-gráficos">Caso práctico II: Gráficos</h2>
+<p>De nuevo, el archivo de datos a usar será <code>student_ratio.csv</code>. Os recomiendo importarlo de nuevo.</p>
+<div class="callout callout-style-default callout-caution callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>La resolución y tamaño en <code>.rmd</code> no es la misma que en consola. Intenta replicar la gráfica de tal forma que sea igual en la salida, no en la gráfica que te coloca <code>.rmd</code> debajo del chunk.</p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="ejercicio-1-1" class="level3">
+<h3 class="anchored" data-anchor-id="ejercicio-1-1">Ejercicio 1:</h3>
+<blockquote class="blockquote">
+<p>Para cada uno de los países y nivel educativo, quédate solo con el último registro (el más reciente).</p>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>student_data <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="at">file=</span><span class="st">"./datos/student_ratio.csv"</span>)</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>student_data_ratio <span class="ot">&lt;-</span> student_data <span class="sc">|&gt;</span> <span class="fu">slice_max</span>(year, <span class="at">by =</span> <span class="fu">c</span>(country, indicator))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="ejercicio-2-1" class="level3">
+<h3 class="anchored" data-anchor-id="ejercicio-2-1">Ejercicio 2:</h3>
+<blockquote class="blockquote">
+<p>Intenta replicar lo más fiel posible el gráfico inferior (sin tema). Realiza las modificaciones que sean necesarias en los datos.</p>
+</blockquote>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./img/ejercicio2.jpg" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>En primer lugar se filtra la columna indicator por los valores de la gráfica mostrada y además eliminamos posibles datos nulos:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>student_data_ratio <span class="ot">&lt;-</span> student_data_ratio <span class="sc">|&gt;</span> <span class="fu">filter</span>(indicator <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"Pre-Primary Education"</span>, <span class="st">"Primary Education"</span>, <span class="st">"Secondary Education"</span>, <span class="st">"Upper Secondary Education"</span>)) <span class="sc">|&gt;</span> <span class="fu">drop_na</span>(student_ratio, indicator) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Después se muestra la gráfica con los datos y ejes concretos. Además se selecciona la función geom_density para crear el gráfico de densidad indicando un alpha para la transparencia y el linewidth para el tamaño de la línea de la gráfica:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> student_data_ratio, <span class="fu">aes</span>(<span class="at">x =</span> student_ratio, <span class="at">fill =</span> indicator, <span class="at">color =</span> indicator)) <span class="sc">+</span> </span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="at">alpha =</span> <span class="dv">1</span>, <span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span> </span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"GRAFICOS DE DENSIDAD"</span>, <span class="at">x=</span><span class="st">"Ratio estudiante/profesor por nivel educativo"</span>, <span class="at">y=</span><span class="st">"Frecuencia"</span>, <span class="at">caption=</span><span class="st">"Datos: UNESCO Institute for Statistics"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Enunciado_files/figure-html/unnamed-chunk-23-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="ejercicio-3-1" class="level3">
+<h3 class="anchored" data-anchor-id="ejercicio-3-1">Ejercicio 3:</h3>
+<blockquote class="blockquote">
+<p>Intenta replicar lo más fiel posible el gráfico inferior (mismos datos que gráfico anterior). Añade o cambia lo que consideres para tener un tamaño base de 14, la legenda en la parte inferior, los títulos de los ejes en tamaño 11, el caption en tamaño 7, el título en negrita y el subtítulo en tamaño 9.</p>
+</blockquote>
+<div class="callout callout-style-default callout-caution callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Importante
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Para fijar el tamaño de base a 14 y el resto de estilos dentro de <code>theme()</code>, escribid:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_set</span>(<span class="fu">theme_light</span>(<span class="at">base_size =</span> <span class="dv">14</span>))</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_update</span>(</span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>                <span class="at">axis.text.x =</span> ...</span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>                <span class="at">axis.text.y =</span> ...</span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>                ...</span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>                <span class="at">plot.title =</span> ...</span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>                ...</span>
+<span id="cb42-8"><a href="#cb42-8" aria-hidden="true" tabindex="-1"></a>            )    </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+</div>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./img/ejercicio3.jpg" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Se asignan los diferentes valores al theme que se ha asignado inicialmente con un base_size de 14. Además para una representación mas fiel al gráfico se escogen los colores del gráfico para crear una paleta que posteriormente se asigne a los diferentes elementos de la gráfica.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_set</span>(<span class="fu">theme_light</span>(<span class="at">base_size =</span> <span class="dv">14</span>))</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_update</span>(</span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>                <span class="at">axis.title.x =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">11</span>),</span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>                <span class="at">axis.title.y =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">11</span>),</span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>                <span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">7</span>),</span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>                <span class="at">axis.text.y =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">7</span>),</span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>                <span class="at">plot.caption =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">7</span>),</span>
+<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a>                <span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">"bold"</span>),</span>
+<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a>                <span class="at">plot.subtitle =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">9</span>),</span>
+<span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a>                <span class="at">legend.position =</span> <span class="st">"bottom"</span>,</span>
+<span id="cb43-11"><a href="#cb43-11" aria-hidden="true" tabindex="-1"></a>                <span class="at">legend.title =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">8</span>),</span>
+<span id="cb43-12"><a href="#cb43-12" aria-hidden="true" tabindex="-1"></a>                <span class="at">legend.text =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">8</span>),</span>
+<span id="cb43-13"><a href="#cb43-13" aria-hidden="true" tabindex="-1"></a>                <span class="at">panel.grid =</span> <span class="fu">element_blank</span>()</span>
+<span id="cb43-14"><a href="#cb43-14" aria-hidden="true" tabindex="-1"></a>            )</span>
+<span id="cb43-15"><a href="#cb43-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-16"><a href="#cb43-16" aria-hidden="true" tabindex="-1"></a>colores <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"#8b1815"</span>,<span class="st">"#717171"</span>,<span class="st">"#f8ab3c"</span>,<span class="st">"#848b4a"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Se construye la gráfica modificando parámetros para hacerla más similar a la de la imagen del ejercicio 3:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> student_data_ratio, <span class="fu">aes</span>(<span class="at">x =</span> student_ratio, <span class="at">fill=</span>indicator, <span class="at">color=</span>indicator)) <span class="sc">+</span> </span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="at">alpha =</span> <span class="fl">0.3</span>, <span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span> </span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> colores) <span class="sc">+</span> </span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> colores) <span class="sc">+</span> </span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"GRAFICOS DE DENSIDAD"</span>, <span class="at">subtitle=</span><span class="st">"... + geom_density()"</span>, <span class="at">x=</span><span class="st">"Ratio estudiante/profesor por nivel educativo"</span>, <span class="at">y=</span><span class="st">"Frecuencia"</span>, <span class="at">caption=</span><span class="st">"Datos: UNESCO Institute for Statistics"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Enunciado_files/figure-html/unnamed-chunk-26-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="ejercicio-4-1" class="level3">
+<h3 class="anchored" data-anchor-id="ejercicio-4-1">Ejercicio 4:</h3>
+<blockquote class="blockquote">
+<p>Sin cambiar el tema configurado en la gráfica anterior, intenta replicar lo más fiel posible el gráfico inferior:</p>
+</blockquote>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./img/ejercicio4.jpg" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Se crea la gráfica en este caso indicando la columna “indicator” en el eje Y. Se modifica también la función que crea el gráfico de densidad para crear una gráfica de densidad por cada uno de los indicators y que así se compare visualmente:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> student_data_ratio, <span class="fu">aes</span>(<span class="at">x =</span> student_ratio, <span class="at">y=</span>indicator, <span class="at">fill=</span>indicator, <span class="at">color=</span>indicator)) <span class="sc">+</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_density_ridges</span>(<span class="at">alpha =</span> <span class="fl">0.3</span>, <span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> colores) <span class="sc">+</span> </span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> colores) <span class="sc">+</span> </span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"GRAFICOS DE DENSIDAD"</span>, <span class="at">subtitle=</span><span class="st">"... + geom_density_ridges()"</span>, <span class="at">x=</span><span class="st">"Ratio estudiante/profesor por nivel educativo"</span>, <span class="at">y=</span><span class="st">"Frecuencia"</span>, <span class="at">caption=</span><span class="st">"Datos: UNESCO Institute for Statistics"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Enunciado_files/figure-html/unnamed-chunk-27-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="ejercicio-5-1" class="level3">
+<h3 class="anchored" data-anchor-id="ejercicio-5-1">Ejercicio 5:</h3>
+<blockquote class="blockquote">
+<p>Repite el gráfico anterior pero componiendo (facetando) cada una por separado (en lugar de todas apiladas una encima de otra)</p>
+</blockquote>
+<p>Para facetar por el indicator se han de deshacer los cambios del anterior ejercicio ya que no queremos un gráfico global que nos monte la comparativa directa. Aparte de estos cambios se deberá llamar a la función facet_wrap que nos permite crear estos subgráficos:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> student_data_ratio, <span class="fu">aes</span>(<span class="at">x =</span> student_ratio, <span class="at">fill=</span>indicator, <span class="at">color=</span>indicator)) <span class="sc">+</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="at">alpha =</span> <span class="fl">0.3</span>, <span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> colores) <span class="sc">+</span> </span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> colores) <span class="sc">+</span> </span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"GRAFICOS DE DENSIDAD"</span>, <span class="at">subtitle=</span><span class="st">"... + geom_density()"</span>, <span class="at">x=</span><span class="st">"Ratio estudiante/profesor por nivel educativo"</span>, <span class="at">y=</span><span class="st">"Frecuencia"</span>, <span class="at">caption=</span><span class="st">"Datos: UNESCO Institute for Statistics"</span>) <span class="sc">+</span></span>
+<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>indicator)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Enunciado_files/figure-html/unnamed-chunk-28-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="ejercicio-6-1" class="level3">
+<h3 class="anchored" data-anchor-id="ejercicio-6-1">Ejercicio 6:</h3>
+<blockquote class="blockquote">
+<p>Carga el archivo <code>regions.csv</code>. Incorpora a la tabla de la UNESCO la información contenida en la tabla regions, de forma que no haya ningún registro con valores ausentes (solo deben sobrevivir los registros que matcheen en ambas tablas).</p>
+</blockquote>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>regions_data <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"./datos/regions.csv"</span>)</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>student_data <span class="ot">&lt;-</span> student_data <span class="sc">|&gt;</span> <span class="fu">inner_join</span>(regions_data, <span class="at">by =</span> <span class="st">"country_code"</span>)</span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>student_data_ratio <span class="ot">&lt;-</span> student_data_ratio <span class="sc">|&gt;</span> <span class="fu">inner_join</span>(regions_data, <span class="at">by =</span> <span class="st">"country_code"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<blockquote class="blockquote">
+<p>Sin cambiar el tema configurado en la gráfica anterior, intenta replicar lo más fiel posible el gráfico inferior.</p>
+</blockquote>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./img/ejercicio5.jpg" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Dado que se indica en el enunciado “Sin cambiar el tema configurado en la gráfica anterior” se escoge la tabla resultado del inner_join con la tabla de studen_data_ratio para realizar la gráfica de barras.</p>
+<p>Para crear el gráfico de barras se utilizará la función geom_bar(), además es importante eliminar posibles datos nulos resultantes de la unión de las tablas para manejar correctamente los datos.</p>
+<p>Por otro lado será necesario calcular la media estudiantes por nivel educativo para representarlo en el gráfico de barras:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>student_data_ratio_bar <span class="ot">&lt;-</span> student_data_ratio <span class="sc">|&gt;</span> <span class="fu">drop_na</span>(student_ratio, indicator, region) <span class="sc">|&gt;</span> <span class="fu">summarise</span>(<span class="at">mean_ratio_indicator =</span> <span class="fu">mean</span>(student_ratio), <span class="at">.by =</span> <span class="fu">c</span>(indicator,region)) </span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> student_data_ratio_bar, <span class="fu">aes</span>(<span class="at">x =</span> region, <span class="at">y=</span> mean_ratio_indicator, <span class="at">fill=</span>indicator)) <span class="sc">+</span></span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> colores) <span class="sc">+</span> </span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> colores) <span class="sc">+</span> </span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">position =</span> <span class="st">"fill"</span>, <span class="at">stat =</span> <span class="st">"identity"</span>) <span class="sc">+</span></span>
+<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"GRAFICO DE BARRAS"</span>, <span class="at">x=</span><span class="st">"Continentes"</span>, <span class="at">y=</span><span class="st">"Ratio estudiante/profesor por nivel educativo"</span>, <span class="at">caption=</span><span class="st">"Datos: UNESCO Institute for Statistics"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Enunciado_files/figure-html/unnamed-chunk-30-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="ejercicio-7-1" class="level3">
+<h3 class="anchored" data-anchor-id="ejercicio-7-1">Ejercicio 7</h3>
+<blockquote class="blockquote">
+<p>Quédate solo con los registros relativos a educación primaria. Tras ello, replica el siguiente gráfico (usando de base el mismo tema configurado anteriormente, modificando lo que consideres)</p>
+</blockquote>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./img/ejercicio6.jpg" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Se filtra en primer lugar la tabla por los registros de educación primaria.</p>
+<p>Se modifica el tema previo eliminando la leyenda y el grid de la gráfica.</p>
+<p>También al haber más muestras se ha de modificar la paleta de colores que se está utilizando.</p>
+<p>Para construir este gráfico vamos a necesitar en el eje X el student_ratio y en el eje Y las diferentes regiones. Si se añaden directamente salen desordenadas por lo que habrá que utilizar la funcion reorder. Además a este reorder se le aplicará un orden inverso ya que se reordena a la inversa.</p>
+<p>Una vez ordenado se genera el gráfico de cajas y bigotes, se asignan las etiquetas correspondientes de los continentes en el eje Y y además se crea una secuencia en el eje X que va de 10 en 10 desde el 10 al 80.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>student_data_ratio_pr_ed <span class="ot">&lt;-</span> student_data_ratio <span class="sc">|&gt;</span> <span class="fu">filter</span>(indicator <span class="sc">==</span> <span class="st">"Primary Education"</span>)</span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_update</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>,<span class="at">panel.grid =</span> <span class="fu">element_blank</span>())</span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>colores_box <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"#8b1815"</span>,<span class="st">"#f8ab3c"</span>,<span class="st">"#c16236"</span>,<span class="st">"#316672"</span>,<span class="st">"#717171"</span>,<span class="st">"#848b4a"</span>)</span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> student_data_ratio_pr_ed, <span class="fu">aes</span>(<span class="at">x=</span>student_ratio, <span class="at">y=</span><span class="fu">fct_rev</span>(<span class="fu">reorder</span>(region,student_ratio, <span class="at">FUN =</span> median)), <span class="at">fill=</span>region, <span class="at">color=</span>region)) <span class="sc">+</span></span>
+<span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.3</span>) <span class="sc">+</span></span>
+<span id="cb49-9"><a href="#cb49-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_discrete</span>(<span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"África"</span>,<span class="st">"Oceanía"</span>,<span class="st">"Asia"</span>,<span class="st">"América del Sur"</span>,<span class="st">"América del Norte"</span>,<span class="st">"Europa"</span>)) <span class="sc">+</span></span>
+<span id="cb49-10"><a href="#cb49-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">guides</span>(<span class="at">fill =</span> <span class="st">"none"</span>, <span class="at">color=</span><span class="st">"none"</span>) <span class="sc">+</span></span>
+<span id="cb49-11"><a href="#cb49-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> colores_box) <span class="sc">+</span> </span>
+<span id="cb49-12"><a href="#cb49-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> colores_box) <span class="sc">+</span> </span>
+<span id="cb49-13"><a href="#cb49-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">10</span>,<span class="dv">80</span>,<span class="dv">10</span>)) <span class="sc">+</span></span>
+<span id="cb49-14"><a href="#cb49-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"GRAFICOS DE CAJAS Y BIGOTES"</span>, <span class="at">subtitle =</span> <span class="st">"Cuidado: no hay leyenda"</span>, <span class="at">x=</span><span class="st">"Ratio estudiante/profesor por nivel educativo"</span>, <span class="at">y=</span><span class="st">"Continentes"</span>, <span class="at">caption=</span><span class="st">"Datos: UNESCO Institute for Statistics"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Enunciado_files/figure-html/unnamed-chunk-31-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="ejercicio-8-1" class="level3">
+<h3 class="anchored" data-anchor-id="ejercicio-8-1">Ejercicio 8</h3>
+<blockquote class="blockquote">
+<p>Replica el siguiente gráfico (usando de base el mismo tema configurado anteriormente, modificando lo que consideres)</p>
+</blockquote>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./img/ejercicio8.jpg" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Para completar este ejercicio se ha mantenido el código del anterior y además se ha añadido la funcion geom_point para pintar los puntos que representan los valores del Ratio estudiante/profesor en los diferentes continentes.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> student_data_ratio_pr_ed, <span class="fu">aes</span>(<span class="at">x=</span>student_ratio, <span class="at">y=</span><span class="fu">fct_rev</span>(<span class="fu">reorder</span>(region,student_ratio, <span class="at">FUN =</span> median)), <span class="at">fill=</span>region, <span class="at">color=</span>region)) <span class="sc">+</span></span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">alpha =</span> <span class="fl">0.3</span>) <span class="sc">+</span></span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">size =</span> <span class="dv">2</span>, <span class="at">alpha =</span> <span class="fl">0.2</span>) <span class="sc">+</span></span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_discrete</span>(<span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"África"</span>,<span class="st">"Oceanía"</span>,<span class="st">"Asia"</span>,<span class="st">"América del Sur"</span>,<span class="st">"América del Norte"</span>,<span class="st">"Europa"</span>)) <span class="sc">+</span></span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">guides</span>(<span class="at">fill =</span> <span class="st">"none"</span>, <span class="at">color=</span><span class="st">"none"</span>) <span class="sc">+</span></span>
+<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> colores_box) <span class="sc">+</span> </span>
+<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> colores_box) <span class="sc">+</span> </span>
+<span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">10</span>,<span class="dv">80</span>,<span class="dv">10</span>)) <span class="sc">+</span></span>
+<span id="cb50-9"><a href="#cb50-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"GRÁFICOS BOXPLOT CON DATOS"</span>, <span class="at">x=</span><span class="st">"Ratio estudiante/profesor en educación primaria"</span>, <span class="at">y=</span><span class="st">"Continent"</span>, <span class="at">caption=</span><span class="st">"Datos: UNESCO Institute for Statistics"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Enunciado_files/figure-html/unnamed-chunk-32-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="ejercicio-9-1" class="level3">
+<h3 class="anchored" data-anchor-id="ejercicio-9-1">Ejercicio 9</h3>
+<blockquote class="blockquote">
+<p>Replica el siguiente gráfico (usando de base el mismo tema configurado anteriormente, modificando lo que consideres). <em>Importante</em>: deja la semilla fijada como se indica <code>set.seed(1234567)</code> (para que a todos nos salga el mismo gráfico), y controla width, que mide el “rango” de aleatoriedad.</p>
+</blockquote>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./img/ejercicio9.jpg" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Para realizar este gráfico se fija la semilla de aleatoriedad y después usando el mismo tema del ejercicio anterior y los mismos datos, se modifica la forma de visualización del gráfico a geom_jitter.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1234567</span>)</span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> student_data_ratio_pr_ed, <span class="fu">aes</span>(<span class="at">x=</span>student_ratio, <span class="at">y=</span><span class="fu">fct_rev</span>(<span class="fu">reorder</span>(region,student_ratio, <span class="at">FUN =</span> median)), <span class="at">fill=</span>region, <span class="at">color=</span>region)) <span class="sc">+</span></span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
+<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_discrete</span>(<span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"África"</span>,<span class="st">"Oceanía"</span>,<span class="st">"Asia"</span>,<span class="st">"América del Sur"</span>,<span class="st">"América del Norte"</span>,<span class="st">"Europa"</span>)) <span class="sc">+</span></span>
+<span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">guides</span>(<span class="at">fill =</span> <span class="st">"none"</span>, <span class="at">color=</span><span class="st">"none"</span>) <span class="sc">+</span></span>
+<span id="cb51-7"><a href="#cb51-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> colores_box) <span class="sc">+</span> </span>
+<span id="cb51-8"><a href="#cb51-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> colores_box) <span class="sc">+</span> </span>
+<span id="cb51-9"><a href="#cb51-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">10</span>,<span class="dv">80</span>,<span class="dv">10</span>)) <span class="sc">+</span></span>
+<span id="cb51-10"><a href="#cb51-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"GRÁFICOS JITTER"</span>, <span class="at">subtitle=</span><span class="st">'(también conocidos como gotelé aleatorio)'</span>, <span class="at">x=</span><span class="st">"Ratio estudiante/profesor en educación primaria"</span>, <span class="at">y=</span><span class="st">"Continente"</span>, <span class="at">caption=</span><span class="st">"Datos: UNESCO Institute for Statistics"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Enunciado_files/figure-html/unnamed-chunk-33-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="ejercicio-10" class="level3">
+<h3 class="anchored" data-anchor-id="ejercicio-10">Ejercicio 10</h3>
+<blockquote class="blockquote">
+<p>Para ser el Batman de los gráficos!!!!. En función de los gráficos anteriores, decide que medida de centralidad será mejor usar con los datos. Tras ello, calcula dicha medida de centralidad sobre student_ratio a nivel global. Tras ello, replica el siguiente gráfico (usando de base el mismo tema configurado anteriormente, modificando lo que consideres), donde el punto más gordo representa dicha medida de centralidad en cada continente. Para la línea vertical, busca <code>? geom_vline</code>. Cambia subtítulo como corresponda.</p>
+</blockquote>
+<div class="cell" data-layout-align="center">
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="./img/ejercicio10.jpg" class="img-fluid quarto-figure quarto-figure-center figure-img" style="width:100.0%"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Como medida de centralidad se ha elegido la media para este gráfico. Para representar los puntos dispersos se mantiene el geom_jitter, pero como partes nuevas se ha añadido el geom_vline que nos permite pintar la línea que establece la media general entre todos los datos y stat_summary que pinta con un punto grande la media por continente del ratio estudiante/profesor en primaria</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1234567</span>)</span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="at">data =</span> student_data_ratio_pr_ed, <span class="fu">aes</span>(<span class="at">x=</span>student_ratio, <span class="at">y=</span><span class="fu">fct_rev</span>(<span class="fu">reorder</span>(region,student_ratio, <span class="at">FUN =</span> median)), <span class="at">fill=</span>region, <span class="at">color=</span>region)) <span class="sc">+</span></span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_jitter</span>(<span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
+<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> student_data_ratio_pr_ed <span class="sc">|&gt;</span> <span class="fu">pull</span>(student_ratio) <span class="sc">|&gt;</span> <span class="fu">mean</span>(),</span>
+<span id="cb52-6"><a href="#cb52-6" aria-hidden="true" tabindex="-1"></a>             <span class="at">color =</span> <span class="st">"blue"</span>,</span>
+<span id="cb52-7"><a href="#cb52-7" aria-hidden="true" tabindex="-1"></a>             <span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb52-8"><a href="#cb52-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_summary</span>(<span class="at">fun=</span> mean, <span class="at">geom =</span><span class="st">"point"</span>, <span class="at">size =</span> <span class="dv">5</span>) <span class="sc">+</span></span>
+<span id="cb52-9"><a href="#cb52-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_discrete</span>(<span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"África"</span>,<span class="st">"Oceanía"</span>,<span class="st">"Asia"</span>,<span class="st">"América del Sur"</span>,<span class="st">"América del Norte"</span>,<span class="st">"Europa"</span>)) <span class="sc">+</span></span>
+<span id="cb52-10"><a href="#cb52-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">guides</span>(<span class="at">fill =</span> <span class="st">"none"</span>, <span class="at">color=</span><span class="st">"none"</span>) <span class="sc">+</span></span>
+<span id="cb52-11"><a href="#cb52-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> colores_box) <span class="sc">+</span> </span>
+<span id="cb52-12"><a href="#cb52-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> colores_box) <span class="sc">+</span> </span>
+<span id="cb52-13"><a href="#cb52-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">10</span>,<span class="dv">80</span>,<span class="dv">10</span>)) <span class="sc">+</span></span>
+<span id="cb52-14"><a href="#cb52-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"GRÁFICOS JITTER"</span>, <span class="at">subtitle=</span><span class="st">'Línea vertical: Media general. Puntos grandes: Medias por continentes'</span>, <span class="at">x=</span><span class="st">"Ratio estudiante/profesor en educación primaria"</span>, <span class="at">y=</span><span class="st">"Continente"</span>, <span class="at">caption=</span><span class="st">"Datos: UNESCO Institute for Statistics"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Enunciado_files/figure-html/unnamed-chunk-34-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

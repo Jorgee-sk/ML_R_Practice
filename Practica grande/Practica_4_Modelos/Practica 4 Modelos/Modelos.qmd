@@ -1,0 +1,2124 @@
+---
+title: "Prática 4: Modelos"
+author: "Jorge Galiano García"
+format:
+  html:
+    theme: [style.scss]
+    toc: true
+    toc-location: right
+    toc-title: Índice
+    toc-depth: 4
+editor: visual
+---
+
+[**ESCENARIO**]{.hl-bluepastel}
+
+Según la Organización Mundial de la Salud (OMS), el [**ictus**]{.hl-bluepastel} es la segunda causa de muerte en el mundo, responsable de aproximadamente el 11% del total de fallecimientos.
+
+```{r ictus_grande, echo = FALSE, out.width = "100%", fig.align = "center", fig.cap = ""}
+knitr::include_graphics("./img/ictus_grande.jpg")
+```
+
+El conjunto de datos sobre [ictus](https://www.kaggle.com/datasets/fedesoriano/stroke-prediction-dataset) (`healthcare_dataset_stroke_data.csv`) está compueto por [**5110 observaciones**]{.hl-pinkpastel} (en este caso cada observación corresponde a un paciente) y de un total de [**12 variables**]{.hl-pinkpastel} (10 variables explicativas, una variable `id` que tomará el rol de identificador y la variable objetivo `stroke`).
+
+[**OBJETIVO**]{.hl-bluepastel}
+
+Construir un modelo (varios en nuestro caso) para [**predecir la probabilidad de sufrir un ictus**]{.hl-pinkpastel} en función de algunas variables de entrada como el sexo, la edad, diversas enfermedades, el hábito de fumar y otras.
+
+[**ENUNCIADO DE LA PRÁCTICA**]{.hl-bluepastel}
+
+1)  **Descargarse el conjunto de datos** desde el enlace facilitado
+
+2)  [**Analizar, depurar, procesar y recategorizar**]{.hl-pinkpastel} los datos (consejo: haz uso de los paquetes `tidyverse`, `ggplt` u otros que hayamos visto que resulten de interés).
+
+3)  Determinar la fijación del criterio de [**bondad de ajuste elegido**]{.hl-pinkpastel}.
+
+4)  [**Realizar los siguientes modelos**]{.hl-pinkpastel}:
+
+    -   **Árbol de Decisión**
+
+    -   **KNN** (*K-Nearest Neighbors*)
+
+    -   **SVM** (*Support Vector Machine*)
+
+    -   **Red Neuronal**
+
+    -   **Algún** método de ***Ensamble***: *Bagging*, *Boosting* o *Stacking* (con uno soy feliz 🫠)
+
+5)  La parte del modelado, [**para cada una de las técnicas menciondas**]{.hl-pinkpastel}, debe contener los [**siguientes puntos**]{.hl-pinkpastel}:
+
+    -   **Justificación** de **hiperparámetros** a modelizar y el rango de los mismos.
+
+    -   Determinar el valor de los **parámetros óptimos**.
+
+    -   Selección de **modelo ganador**🎖 (en caso de que el propio algoritmo lo permita, explicar dicho modelo) y evaluación sobre conjunto *Test*
+
+6)  **Comparar** los 5 modelos generados
+
+::: callout-important
+## Consideraciones
+
+1)  El trabajo es **individual**🏌️
+
+2)  El **análisis y depuración de los datos**🧹 es sin duda la fase más importante de un proyecto como en el que nos encontramos, por ello **será la parte que más pese** del trabajo en comparación con el resto de puntos
+
+3)  El trabajo deberá estar explicado (no basta con poner solo las salidas). Es necesario indicar el código utilizado. Se **valorará la claridad de exposición en el informe y la estructura**📝
+
+4)  📀**IMPORTANTE**📀: Toda el contenido matemático **se evaluará** en la asignatura ***Matemática y Estadística para la Inteligencia Artificial***📱. Por lo que subiréis las entregas tanto a una asignatura como a la otra (*Aprendizaje Automático Avanzado*)
+:::
+
+## Librerías
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+rm(list = ls())
+
+library(tidyverse)  # Depuración datos
+library(skimr)      # Resumen numérico
+library(outliers)   # Outliers
+library(ggplot2)    # Gráficos
+library(tidymodels) # Modelos
+library(rpart)      # CART
+library(rpart.plot) # Graficar árbol
+library(caret)      # Matriz de Confusion
+library(glue)       # pegar texto + variables fácilmente
+library(DT)         # Para mostrar tabla (formatStyle)
+library(ROSE)       # Para Oversampling
+library(yardstick)  # Cómo funcionan modelos
+library(forcats)    # Para factores
+library(solitude) # Isolation Forest
+library(mice) # Imputar RF
+library(modeest) # Para moda
+library(stratification) # Dalenius
+library(fastDummies) # Dummies
+library(rsample) # Para particion Train/Test
+# Combinar gráficos
+library(egg)
+library(ggimage)
+library(ggpubr)
+library(hrbrthemes)
+library(ggthemes)
+
+```
+
+
+## Datos
+
+En primer lugar vamos a **importar el dataset** con el que se va a trabajar.
+
+```{r}
+#| message: false
+#| warning: false
+
+dataset_attrition <- read.csv(file = "./data/watson_healthcare_modified.csv")
+
+```
+
+Además vamos a convertir la variable objetivo, que en nuestro caso es **Attrition** a tipo factor donde podrá obtener los valores **No** y **Yes**. Por otro lado se va a realizar una transformación de tal forma que la variable quede representada con valores 1-Yes y 0-No y se mantenga como categórica.
+
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+dataset_attrition$Attrition <- factor(dataset_attrition$Attrition)
+
+is.factor(dataset_attrition$Attrition)
+
+levels(dataset_attrition$Attrition)
+
+dataset_attrition <- dataset_attrition |> mutate(Attrition = ifelse(Attrition == "Yes",1,0))
+
+dataset_attrition$Attrition <- as.factor(dataset_attrition$Attrition)
+
+```
+
+
+
+También es importante **estandarizar los nombres de las variables de nuestro dataset**. En general se puede ver que el dataset viene bastante bien preparado ya que no contiene espacios pero si que tiene [UpperCamelCase](https://wiki.c2.com/?PascalCase) por lo que deberemos convertir las variables a minúsculas.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+names(dataset_attrition)
+
+names(dataset_attrition) <- str_to_lower(names(dataset_attrition))
+
+```
+
+### Variable objetivo
+
+Es muy importante conocer la distribución de la variable objetivo para diseñar estrategias de modelado adecuadas, garantizar un entrenamiento justo y obtener métricas confiables. 
+
+Con esta visualización de la variable objetivo podremos detectar posibles desbalanceos de nuestro conjunto de datos que nos permitirán crear estrategias para poder suplir estos problemas a la hora de crear los modelos y entrenarlos.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+dataset_attrition |> group_by(attrition) |> summarise(nAttrition = n(), Porc = round(n()*100/nrow(dataset_attrition),2)) |> ggplot(aes(x = attrition, y = nAttrition, fill = attrition)) +
+geom_col(position = "dodge", alpha = 0.8) +
+geom_text(aes(label = paste(nAttrition," (",Porc,"%)")),colour = "black", size = 3.5,vjust = -0.5) +
+ylim(0,1500)+
+scale_fill_manual(values = c("#4ec475","#f23849")) +
+labs(title = "Distribución de la variable objetivo",
+     subtitle = "Reparto de niveles de la variable objetivo (attrition)")+
+theme_minimal()+
+theme(plot.title = element_text(size = 20, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 12, face = "bold"),
+      legend.position = "None")
+
+```
+Como podemos observar nuestra variable objetivo **Attrition** tiene un 88.13% - 11.87% entre los dos valores que puede obtener, lo que nos indica que es una variable que está muy desbalanceada. A la hora de entrenar los modelos, esto va a tener repercusiones negativas haciendo que no haya buenas predicciones de cuando un empleado vaya a abandonar la empresa. 
+
+Para solucionar este problema se buscará una técnica tras realizar el análisis del resto de los datos para compensar esta falta de datos en el **1-Yes** de la variable objetivo.
+
+### Analisis exploratorio de los datos
+
+Para llevar a cabo este análisis en primer lugar vamos a visualizar un resumen de los datos que tenemos actualmente en el dataset:
+
+```{r}
+dataset_attrition |> skim()
+```
+
+
+En esta primera visualización de los datos no se obtiene ningún tipo de dato nulo por lo que no habrá que hacer ningún tipo de conversion de datos.
+
+#### Analisis de variables
+
+-   [**Variable *over18***]{.hl-bluepastel}
+
+En primer lugar podemos ver que existe una variable denominada **over18** que indica si el trabajador tiene más de 18 años o no. Esta variable normalmente sería dicotómica por su propia definición pero podemos observar que solo tiene un valor.
+
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+dataset_attrition |> 
+  mutate(over18 = ifelse(over18 == "Y","Yes","No")) |> 
+  group_by(over18) |> 
+  summarise(nOver18 = n(), Porc = round(n()*100/nrow(dataset_attrition),2)) |> 
+  ggplot(aes(x = over18, y = nOver18, fill = over18))  + geom_col(position = "dodge", alpha = 0.8) + geom_text(aes(label = paste(nOver18," (",Porc,"%)")),colour = "black", size = 3.5,vjust = -0.5)+ ylim(0,2000) + scale_fill_manual(values = c("#4ec475")) + labs(title = "Distribución de la variable over18")+
+theme_minimal()+
+theme(plot.title = element_text(size = 20, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 12, face = "bold"),
+      legend.position = "None")
+```
+
+
+Por lo que podemos deducir que es una variable que no aporta valor predictivo ni analítico y por tanto se puede eliminar de nuestro dataset.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+dataset_attrition = select(dataset_attrition, -over18)
+```
+
+-   [**Variable *employeecount***]{.hl-bluepastel}
+
+Esta variable representa el número de empleados por fila dentro del dataset, es una variable redundante ya que por fila solo habrá un empleado dentro de nuestros datos y por tanto no nos aporta ningún tipo de información por lo que puede ser eliminada.
+
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+dataset_attrition = select(dataset_attrition, -employeecount)
+```
+
+-   [**Variable *standardhours***]{.hl-bluepastel}
+
+Esta variable representa el número de horas que trabaja un empleado cada dos semanas. Es un valor constante para todos los empleados por lo que al igual que en los dos casos anteriores, no aporta valor ni predictivo ni analítico y se puede eliminar. 
+
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+dataset_attrition = select(dataset_attrition, -standardhours)
+```
+
+
+-   [**Variable *overtime***]{.hl-bluepastel}
+
+La variable denominada **overtime** indica si el empleado ha trabajado horas extras o no. Inicialmente la variable es de tipo char con dos valores diferentes que son **Yes** y **No**, por lo que se trata de una variable dicotómica. 
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+dataset_attrition |> 
+  group_by(overtime) |> 
+  summarise(nOvertime = n(), Porc = round(n()*100/nrow(dataset_attrition),2)) |> 
+  ggplot(aes(x = overtime, y = nOvertime, fill = overtime))  + geom_col(position = "dodge", alpha = 0.8) + geom_text(aes(label = paste(nOvertime," (",Porc,"%)")),colour = "black", size = 3.5,vjust = -0.5)+ ylim(0,1300) + labs(title = "Distribución de la variable overtime")+
+theme_minimal()+
+theme(plot.title = element_text(size = 20, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 12, face = "bold"),
+      legend.position = "None")
+```
+
+Se va a realizar una transformación de tal forma que las variables dicotómicas queden representadas con valores **1-Yes** y **0-No**.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+dataset_attrition <- dataset_attrition |> mutate(overtime = ifelse(overtime == "Yes",1,0))
+```
+
+-   [**Variable *maritalstatus***]{.hl-bluepastel}
+
+La variable denominada **maritalstatus** indica el estado civil del empleado, concretamente puede ser **Single**, **Married** o **Divorced**. Se va a estudiar si esta variable puede llegar a ser simplificada a una variable dicotómica en la que se exprese únicamente si el empleado está casado o no.
+
+En primer lugar vamos a ver si existe alguna variable que tenga pocos datos y por tanto pueda juntarse con otra, por ejemplo juntar **Single** con **Divorced** ya que no tendrían pareja.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+dataset_attrition |> 
+  group_by(maritalstatus) |> 
+  summarise(nMaritalStatus = n(), Porc = round(n()*100/nrow(dataset_attrition),2)) |> 
+  ggplot(aes(x = maritalstatus, y = nMaritalStatus, fill = maritalstatus))  + geom_col(position = "dodge", alpha = 0.8) + geom_text(aes(label = paste(nMaritalStatus," (",Porc,"%)")),colour = "black", size = 3.5,vjust = -0.5)+ ylim(0,1300) + labs(title = "Distribución de la variable maritalstatus")+
+theme_minimal()+
+theme(plot.title = element_text(size = 20, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 12, face = "bold"),
+      legend.position = "None")
+```
+
+Observamos que la distribución de esta variable no muestra ningún desbalance en los datos por lo que de momento no se podrá hacer la operación de juntar los campos mencionados anteriormente.
+
+**Vamos a relacionar maritalstatus con la variable objetivo para buscar si se podría hacer esta agrupación.**
+
+Viendo la relación que se establece entre la variable del abandono del trabajo (variable objetivo) y el estado civil, se va a poder deducir finalmente si la variable podría modificarse o no a una dicotómica que represente si el empleado tiene o no pareja.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+# Apuntamos tasas
+attrition_married <-  round(min(dataset_attrition |> group_by(maritalstatus) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> 
+                              filter(maritalstatus == "Married" & attrition == "1") |> select(attrition_ratio)),2)
+
+attrition_single <-  round(min(dataset_attrition |> group_by(maritalstatus) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> 
+                              filter(maritalstatus == "Single" & attrition == "1") |> select(attrition_ratio)),2)
+
+attrition_divorced <-  round(min(dataset_attrition |> group_by(maritalstatus) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> 
+                              filter(maritalstatus == "Divorced" & attrition == "1") |> select(attrition_ratio)),2)
+
+
+dataset_attrition |> group_by(maritalstatus) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |>
+ggplot(aes(x = maritalstatus, y = attrition_ratio, fill = attrition))+
+geom_col()+
+coord_flip()+
+annotate("text", x = 2, y= 11, label= paste(attrition_married,"%", sep =""),size = 4 ,fontface = "bold") + 
+annotate("text", x = 3, y= 11, label= paste(attrition_single,"%", sep =""),size = 4 ,fontface = "bold") + 
+annotate("text", x = 1, y= 11, label= paste(attrition_divorced,"%", sep =""),size = 4 ,fontface = "bold") +
+theme_minimal()+
+theme(axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.y = element_text(size = 12, face = "bold"),
+      legend.position = "None"
+      )
+
+
+```
+Se puede apreciar que la variable **Single** no tiene un porcentaje parecido a la de **Divorced** por lo que es mejor mantener separadas estas variables ya que aportan una información diferente.
+
+La mayor tasa de abandono del trabajo en función del estado civil se da cuando el empleado está soltero sin haberse casado anteriormente.
+
+
+-   [**Variable *jobrole***]{.hl-bluepastel}
+
+La variable denominada **jobrole** representa el rol actual que cumple el empleado dentro de la empresa. Se trata de una variable que deberá ser convertida a categórica más adelante tras visualizar el resto de datos. Los valores que puede tomar son **Nurse**,**Therapist**,**Administrative**,**Admin** y **Other**.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+dataset_attrition |> 
+  group_by(jobrole) |> 
+  summarise(njobrole = n(), Porc = round(n()*100/nrow(dataset_attrition),2)) |> 
+  ggplot(aes(x = jobrole, y = njobrole, fill = jobrole))  + geom_col(position = "dodge", alpha = 0.8) + geom_text(aes(label = paste(njobrole," (",Porc,"%)")),colour = "black", size = 3.5,vjust = -0.5)+ ylim(0,1300) + labs(title = "Distribución de la variable jobrole")+
+theme_minimal()+
+theme(plot.title = element_text(size = 20, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 12, face = "bold"),
+      legend.position = "None")
+```
+
+Se va a estudiar si los datos categorizados como **Admin** y como **Administrative** pueden llegar a representar el mismo tipo de empleado.
+
+En primer lugar se va a calcular el salario medio por rol para contemplar si los salarios son parecidos, en caso de serlos, podríamos seguir con la hipótesis de que se trata del mismo rol.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+dataset_attrition |> 
+  filter(jobrole %in% c("Administrative", "Admin", "Nurse", "Other","Therapist")) |> 
+  group_by(jobrole) |> 
+  summarise(
+    avg_salary = mean(monthlyincome, na.rm = TRUE)
+  ) |> ggplot(aes(x = jobrole, y = avg_salary, fill = avg_salary)) +
+geom_col(position = "dodge", alpha = 0.8) +
+ylim(0,18000) +
+labs(title = "Salario medio por rol",
+     subtitle = "Salario medio de los empleados por los diferentes roles dentro de la empresa")+
+theme_minimal()+
+theme(plot.title = element_text(size = 20, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 12, face = "bold"),
+      legend.position = "None")
+```
+
+Como observamos en el gráfico nuestras dos categorías muestran un **salario medio similar** por lo que vamos a seguir con el análisis.
+
+
+En este caso lo que vamos a hacer es estudiar si se mantienen similares los porcentajes de los departamentos o campos en los que el empleado trabaja dependiendo de si su rol es **Admin** o **Administrative**
+
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+admin_departments <- dataset_attrition |> group_by(department) |> count(jobrole) |> filter(jobrole == "Admin") |>
+   ungroup() |> mutate(percentage = (n / sum(n)) * 100)
+
+plot1 <- ggplot(admin_departments, aes(x = department, y = percentage, fill = department)) +
+  geom_bar(stat = "identity") +
+  labs(
+    title = "Admin por departamento (%)"
+  ) +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
+  theme_minimal() +
+  theme(
+     axis.title.y = element_blank(),
+     axis.title.x =element_blank(),
+     legend.position = "none")
+
+administrative_departments <- dataset_attrition |> group_by(department) |> count(jobrole) |> filter(jobrole == "Administrative") |> ungroup() |> mutate(percentage = (n / sum(n)) * 100)
+
+plot2 <- ggplot(administrative_departments, aes(x = department, y = percentage, fill = department)) +
+  geom_bar(stat = "identity") +
+  labs(
+    title = "Administrativo por departamento (%)"
+  ) +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
+  theme_minimal() +
+  theme(
+     axis.title.y = element_blank(),
+     axis.title.x =element_blank(),
+     legend.position = "none")
+
+grid.arrange(plot1, plot2, ncol = 2)
+
+```
+
+Con estos gráficos podemos observar que los porcentajes de **Admin** y **Administrative** en los diferentes departamentos o campos de trabajo son similares, por lo que sumado a una media de salario similar podemos llegar a deducir que la categoría **Admin** se puede comportar como **Administrative**
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+dataset_attrition <- dataset_attrition |> mutate(jobrole = ifelse(jobrole == "Admin","Administrative", jobrole))
+```
+
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+dataset_attrition |> 
+  group_by(jobrole) |> 
+  summarise(njobrole = n(), Porc = round(n()*100/nrow(dataset_attrition),2)) |> 
+  ggplot(aes(x = jobrole, y = njobrole, fill = jobrole))  + geom_col(position = "dodge", alpha = 0.8) + geom_text(aes(label = paste(njobrole," (",Porc,"%)")),colour = "black", size = 3.5,vjust = -0.5)+ ylim(0,1300) + labs(title = "Distribución de la variable jobrole modificada")+
+theme_minimal()+
+theme(plot.title = element_text(size = 20, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 12, face = "bold"),
+      legend.position = "None")
+```
+
+-   [**Variable *businesstravel***]{.hl-bluepastel}
+
+La variable businesstravel representa la frecuencia de viajes de negocios de los distintos empleados de la compañía. Existen tres categorías **Travel_Rarely**, **Non_Travel** y por último **Travel_Frecuently**
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+dataset_attrition |> 
+  group_by(businesstravel) |> 
+  summarise(nBusinessTravel = n(), Porc = round(n()*100/nrow(dataset_attrition),2)) |> 
+  ggplot(aes(x = businesstravel, y = nBusinessTravel, fill = businesstravel))  + geom_col(position = "dodge", alpha = 0.8) + geom_text(aes(label = paste(nBusinessTravel," (",Porc,"%)")),colour = "black", size = 3.5,vjust = -0.5)+ ylim(0,1200) + labs(title = "Distribución de la variable businesstravel")+
+theme_minimal()+
+theme(plot.title = element_text(size = 15, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 12, face = "bold"),
+      legend.position = "None")
+```
+
+Observando las diferentes categorías podemos deducir que se pueden simplificar los datos a viaja o no viaja el empleado. Esto convertirá la variable en dicotómica.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+dataset_attrition <- dataset_attrition |> mutate(businesstravel = ifelse(businesstravel == "Non-Travel",0,1))
+```
+
+
+Por tanto obtendremos la variable **businesstravel** con dos valores posibles, **0** cuando no viaje y **1** cuando el empleado viaje.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+dataset_attrition |> 
+  group_by(businesstravel) |> 
+  summarise(nBusinessTravel = n(), Porc = round(n()*100/nrow(dataset_attrition),2)) |> 
+  ggplot(aes(x = as.factor(businesstravel), y = nBusinessTravel, fill = as.factor(businesstravel))) +
+  geom_col(position = "dodge", alpha = 1) +
+  geom_text(aes(label = paste(nBusinessTravel," (",Porc,"%)")),colour = "black", size = 3.5,vjust = -0.5)+ ylim(0,1600) +
+  labs(title = "Distribución de la variable businesstravel modificada") +
+theme_minimal()+
+theme(plot.title = element_text(size = 15, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 12, face = "bold"),
+      legend.position = "None")
+```
+-   [**Variable *educationfield***]{.hl-bluepastel}
+
+Esta variable representa el campo en el que se ha formado el empleado. Inicialmente existen diferentes categorías **Human Resources**, **Marketing**, **Life Sciences**, **Medical**, **Technical Degree** y **Other**.
+
+En primer lugar vamos a visualizar como queda distribuida esta variable en función de las categorías iniciales.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+dataset_attrition |> 
+  group_by(educationfield) |> 
+  summarise(neducationfield = n(), Porc = round(n()*100/nrow(dataset_attrition),2)) |> 
+  ggplot(aes(x = educationfield, y = neducationfield, fill = educationfield))  + geom_col(position = "dodge", alpha = 0.8) + geom_text(aes(label = paste(neducationfield," (",Porc,"%)")),colour = "black", size = 3.5,vjust = -0.5)+ ylim(0,1200) + labs(title = "Distribución de la variable educationfield")+
+theme_minimal()+
+theme(plot.title = element_text(size = 20, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 9, face = "bold"),
+      legend.position = "None")
+```
+
+Todas estas categorías representan diferentes ámbitos dentro del mundo laboral y formativo, pero pueden ser **agrupadas de una forma más simple**. Esta forma es el **tipo de ciencia o itinerario** al que pertenecen.
+
+Por ejemplo, las personas formadas en **Recursos Humanos** y **Marketing**, comparten su formación en ciencias sociales ya que para cursar grados o ciclos formativos de estos estudios se necesita normalmente formación previa en un itinerario orientado a las ciencias sociales.
+
+Ocurre lo mismo con las categorías **Medical** y **Life Sciences**. Estas pueden juntarse en una sola categoría ya que a pesar de la amplitud del campo de la medicina, esta sigue siendo parte de las ciencias biológicas.
+
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+dataset_attrition <- dataset_attrition |> 
+  mutate(educationfield = case_when(
+    educationfield %in% c("Human Resources", "Marketing") ~ "Social sciences",
+    educationfield %in% c("Life Sciences", "Medical") ~ "Life sciences",
+    educationfield == "Technical Degree" ~ "Technological sciences",
+    TRUE ~ educationfield # Mantener el resto como están (other)
+  ))
+```
+
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+dataset_attrition |> 
+  group_by(educationfield) |> 
+  summarise(neducationfield = n(), Porc = round(n()*100/nrow(dataset_attrition),2)) |> 
+  ggplot(aes(x = educationfield, y = neducationfield, fill = educationfield))  + geom_col(position = "dodge", alpha = 0.8) + geom_text(aes(label = paste(neducationfield," (",Porc,"%)")),colour = "black", size = 3.5,vjust = -0.5)+ ylim(0,1250) + labs(title = "Distribución de la variable educationfield modificada")+
+theme_minimal()+
+theme(plot.title = element_text(size = 16, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 10, face = "bold"),
+      legend.position = "None")
+```
+
+
+Por último se van a analizar las variables restantes de tipo character [***gender y department***]{.hl-bluepastel}
+
+Estas variables tienen representatividad en sus diferentes niveles por lo que no van a sufrir ningún tipo de modificación.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+plot_gender <- dataset_attrition |> 
+  group_by(gender) |> 
+  summarise(nGender = n(), Porc = round(n()*100/nrow(dataset_attrition),2)) |> 
+  ggplot(aes(x = gender, y = nGender, fill = gender))  + geom_col(position = "dodge", alpha = 0.8) + geom_text(aes(label = paste(nGender," (",Porc,"%)")),colour = "black", size = 3.5,vjust = -0.5)+ ylim(0,1000) + labs(title = "Distribución de la variable gender")+
+theme_minimal()+
+theme(plot.title = element_text(size = 12, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 10, face = "bold"),
+      legend.position = "None")
+
+plot_department <- dataset_attrition |> 
+  group_by(department) |> 
+  summarise(nDepartment = n(), Porc = round(n()*100/nrow(dataset_attrition),2)) |> 
+  ggplot(aes(x = department, y = nDepartment, fill = department))  + geom_col(position = "dodge", alpha = 0.8) + geom_text(aes(label = paste(nDepartment," (",Porc,"%)")),colour = "black", size = 3.5,vjust = -0.5)+ ylim(0,1000) + labs(title = "Distribución de la variable department")+
+theme_minimal()+
+theme(plot.title = element_text(size = 12, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 10, face = "bold"),
+      legend.position = "None")
+
+grid.arrange(plot_gender, plot_department, ncol = 2)
+
+```
+
+A la hora de **analizar las variables numéricas** es muy importante también **considerar el tratamiento de outliers** en las mismas. Se van a revisar las diferentes variables numéricas para conocer aquellas que requieren o no del tratamiento de outliers.
+
+En primer lugar se van a **identificar aquellas variables que no son numéricas por definición**. En nuestro dataset, existen diferentes variables que a pesar de ser numéricas representan realmente categorías, estas variables son las siguientes:
+
+-   [**Variable *joblevel***]{.hl-bluepastel}
+
+La variable **joblevel** representa el nivel del empleado en la empresa. Este nivel está ligado al escalafón de la propia empresa. Siendo **1 el nivel más bajo y 5 el más alto**.
+
+Se trata de una variable que realmente no es numérica ya que tiene un número definido de categorías entre las cuales se pueden mover los diferentes empleados.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+dataset_attrition |> 
+  group_by(joblevel) |> 
+  summarise(nJobLevel = n(), Porc = round(n()*100/nrow(dataset_attrition),2)) |> 
+  ggplot(aes(x = as.factor(joblevel), y = nJobLevel, fill = as.factor(joblevel)))  + geom_col(position = "dodge", alpha = 0.8) + geom_text(aes(label = paste(nJobLevel," (",Porc,"%)")),colour = "black", size = 3.5,vjust = -0.5)+ ylim(0,650) + labs(title = "Distribución de la variable joblevel")+
+theme_minimal()+
+theme(plot.title = element_text(size = 16, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 12, face = "bold"),
+      legend.position = "None")
+```
+
+-   [**Variable *shift***]{.hl-bluepastel}
+
+La variable **shift** representa los turnos de trabajo de los diferentes empleados. Puede tomar los siguientes valores, **0 - Employees with own schedule**, **1 - 7am to 3:30pm**, **2 - 2pm to 10pm**, **3 - 9pm to 7am**
+
+Se trata de una variable que realmente es categórica por el mismo motivo que **joblevel**. Por lo que posteriormente también se hará la conversión de numérica a categórica de esta variable.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+dataset_attrition |> 
+  group_by(shift) |> 
+  summarise(nShift = n(), Porc = round(n()*100/nrow(dataset_attrition),2)) |> 
+  ggplot(aes(x = as.factor(shift), y = nShift, fill = as.factor(shift)))  + geom_col(position = "dodge", alpha = 0.8) + geom_text(aes(label = paste(nShift," (",Porc,"%)")),colour = "black", size = 3.5,vjust = -0.5)+ ylim(0,750) + labs(title = "Distribución de la variable shift")+
+theme_minimal()+
+theme(plot.title = element_text(size = 16, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 12, face = "bold"),
+      legend.position = "None")
+```
+
+-   [**Variable *education***]{.hl-bluepastel}
+
+La variable **education** representa el nivel educativo los diferentes empleados. Toma valores desde, **1** a **5** siendo este último el mayor nivel educativo de todos.
+
+Se trata de una variable que también es categórica por el mismo motivo que **shift** y que **joblevel**. Por lo que posteriormente se convertirá a categórica.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+dataset_attrition |> 
+  group_by(education) |> 
+  summarise(nEducation = n(), Porc = round(n()*100/nrow(dataset_attrition),2)) |> 
+  ggplot(aes(x = as.factor(education), y = nEducation, fill = as.factor(education)))  + geom_col(position = "dodge", alpha = 0.8) + geom_text(aes(label = paste(nEducation," (",Porc,"%)")),colour = "black", size = 3.5,vjust = -0.5)+ ylim(0,750) + labs(title = "Distribución de la variable education")+
+theme_minimal()+
+theme(plot.title = element_text(size = 16, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 12, face = "bold"),
+      legend.position = "None")
+```
+
+-   [**Variable *age***]{.hl-bluepastel}
+
+La variable **age** representa la edad de los empleados. Se trata de una variable númerica.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+dataset_attrition |> ggplot( aes(x=as.factor(1), y=age, fill = "#023047" )) +
+              geom_violin(width = 1) +
+              stat_boxplot(geom = "errorbar", width = 0.15,color = "#C2185B") +
+              geom_boxplot(width=0.2, color="#C2185B", alpha = 1 ) +
+              scale_fill_manual(values = c("#023047")) +
+              labs(title = "Distribución variable age", 
+                   subtitle = "Gráfico de violin y boxplot")+
+              theme_minimal()+
+              theme(axis.title.y = element_blank(),
+                    axis.title.x =element_blank(),
+                    axis.text.x = element_blank(),
+                    legend.position = "None",
+                    plot.title = element_text(size = 20, face = "bold")
+                    )
+```
+Podemos observar que no existen outliers por lo que no se hará un tratamiento especial de la variable **age**.
+
+-   [**Variables *yearsatcompany*, *yearsincurrentrole*, *yearssincelastpromotion* y *yearswithcurrmanager***]{.hl-bluepastel}
+
+La variable **yearsatcompany** el número de años en la compañia de cada empleado.
+
+La variable **yearsincurrentrole** el número de años en un rol concreto dentro de la compañía de cada empleado.
+
+La variable **yearssincelastpromotion** el número de años desde que el empleado recibió su último ascenso.
+
+La variable **yearswithcurrmanager** el número de años que lleva trabajando para un jefe concreto.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+gg_yearsatcompany <- dataset_attrition |> ggplot( aes(x=as.factor(1), y=yearsatcompany, fill = "#023047" )) +
+              geom_violin(width = 1) +
+              stat_boxplot(geom = "errorbar", width = 0.15,color = "#C2185B") +
+              geom_boxplot(width=0.2, color="#C2185B", alpha = 1 ) +
+              scale_fill_manual(values = c("#023047")) +
+              labs(title = "Distribución variable yearsatcompany")+
+              theme_minimal()+
+              theme(axis.title.y = element_blank(),
+                    axis.title.x =element_blank(),
+                    axis.text.x = element_blank(),
+                    legend.position = "None",
+                    plot.title = element_text(size = 12, face = "bold")
+                    )
+
+gg_yearsincurrentrole <- dataset_attrition |> ggplot( aes(x=as.factor(1), y=yearsincurrentrole, fill = "#023047" )) +
+              geom_violin(width = 1) +
+              stat_boxplot(geom = "errorbar", width = 0.15,color = "#C2185B") +
+              geom_boxplot(width=0.2, color="#C2185B", alpha = 1 ) +
+              scale_fill_manual(values = c("#023047")) +
+              labs(title = "Distribución variable yearsincurrentrole")+
+              theme_minimal()+
+              theme(axis.title.y = element_blank(),
+                    axis.title.x =element_blank(),
+                    axis.text.x = element_blank(),
+                    legend.position = "None",
+                    plot.title = element_text(size = 12, face = "bold")
+                    )
+
+gg_yearssincelastpromotion <- dataset_attrition |> ggplot( aes(x=as.factor(1), y=yearssincelastpromotion, fill = "#023047" )) +
+              geom_violin(width = 1) +
+              stat_boxplot(geom = "errorbar", width = 0.15,color = "#C2185B") +
+              geom_boxplot(width=0.2, color="#C2185B", alpha = 1 ) +
+              scale_fill_manual(values = c("#023047")) +
+              labs(title = "Distribución variable yearssincelastpromotion")+
+              theme_minimal()+
+              theme(axis.title.y = element_blank(),
+                    axis.title.x =element_blank(),
+                    axis.text.x = element_blank(),
+                    legend.position = "None",
+                    plot.title = element_text(size = 10, face = "bold")
+                    )
+
+gg_yearswithcurrmanager <- dataset_attrition |> ggplot( aes(x=as.factor(1), y=yearswithcurrmanager, fill = "#023047" )) +
+              geom_violin(width = 1) +
+              stat_boxplot(geom = "errorbar", width = 0.15,color = "#C2185B") +
+              geom_boxplot(width=0.2, color="#C2185B", alpha = 1 ) +
+              scale_fill_manual(values = c("#023047")) +
+              labs(title = "Distribución variable yearswithcurrmanager")+
+              theme_minimal()+
+              theme(axis.title.y = element_blank(),
+                    axis.title.x =element_blank(),
+                    axis.text.x = element_blank(),
+                    legend.position = "None",
+                    plot.title = element_text(size = 10, face = "bold")
+                    )
+
+ggarrange(gg_yearsatcompany,gg_yearsincurrentrole,gg_yearssincelastpromotion,gg_yearswithcurrmanager, ncol=2, nrow = 2, common.legend = TRUE, legend = "none")
+
+```
+Observando todas las gráficas vemos como todas las variables tienen una **distribución asimétrica** con presencia de outliers que se van a tratar posteriormente.
+
+
+-   [**Variable *distancefromhome***]{.hl-bluepastel}
+
+La variable **distancefromhome** es una variable numérica que representa la distancia que tiene cada empleado desde su casa hasta el trabajo.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+dataset_attrition |> ggplot( aes(x=as.factor(1), y=distancefromhome, fill = "#023047" )) +
+              geom_violin(width = 1) +
+              stat_boxplot(geom = "errorbar", width = 0.15,color = "#C2185B") +
+              geom_boxplot(width=0.2, color="#C2185B", alpha = 1 ) +
+              scale_fill_manual(values = c("#023047")) +
+              labs(title = "Distribución variable distancefromhome")+
+              theme_minimal()+
+              theme(axis.title.y = element_blank(),
+                    axis.title.x =element_blank(),
+                    axis.text.x = element_blank(),
+                    legend.position = "None",
+                    plot.title = element_text(size = 20, face = "bold")
+                    )
+```
+
+
+Se observa en la gráfica de distribución de **distancefromhome** como existe asimetría en la distribución de la variable. A pesar de esta asimetría, no existen outliers por lo que no se deberá hacer un tratamiento especial de esta variable.
+
+
+-   [**Variable *monthlyincome***]{.hl-bluepastel}
+
+La variable **monthlyincome** es una variable numérica que representa el sueldo mensual de cada empleado.
+
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+dataset_attrition |> ggplot( aes(x=as.factor(1), y=monthlyincome, fill = "#023047" )) +
+              geom_violin(width = 1) +
+              stat_boxplot(geom = "errorbar", width = 0.15,color = "#C2185B") +
+              geom_boxplot(width=0.2, color="#C2185B", alpha = 1 ) +
+              scale_fill_manual(values = c("#023047")) +
+              labs(title = "Distribución variable monthlyincome")+
+              theme_minimal()+
+              theme(axis.title.y = element_blank(),
+                    axis.title.x =element_blank(),
+                    axis.text.x = element_blank(),
+                    legend.position = "None",
+                    plot.title = element_text(size = 20, face = "bold")
+                    )
+```
+
+Observamos que existen outliers en esta variable así como asimetría de su distribución por lo que si que se llevará a cabo un tratamiento de outliers.
+
+-   [**Variable *numcompaniesworked***]{.hl-bluepastel}
+
+La variable **numcompaniesworked** es una variable numérica que representa el número de compañías en las que ha trabajado un empleado.
+
+
+```{r}
+dataset_attrition |> ggplot( aes(x=as.factor(1), y=numcompaniesworked, fill = "#023047" )) +
+              geom_violin(width = 1) +
+              stat_boxplot(geom = "errorbar", width = 0.15,color = "#C2185B") +
+              geom_boxplot(width=0.2, color="#C2185B", alpha = 1 ) +
+              scale_fill_manual(values = c("#023047")) +
+              labs(title = "Distribución variable numcompaniesworked")+
+              theme_minimal()+
+              theme(axis.title.y = element_blank(),
+                    axis.title.x =element_blank(),
+                    axis.text.x = element_blank(),
+                    legend.position = "None",
+                    plot.title = element_text(size = 20, face = "bold")
+                    )
+```
+Con la distribución de la variable **numcompaniesworked** podemos detectar que hay asimetría y que además existen ciertos valores outlier. 
+
+-   [**Variable *percentsalaryhike***]{.hl-bluepastel}
+
+La variable **percentsalaryhike** es una variable numérica que representa el porcentaje de salario que ha aumentado en la subida de sueldo más reciente de un empleado.
+
+```{r}
+dataset_attrition |> ggplot( aes(x=as.factor(1), y=percentsalaryhike, fill = "#023047" )) +
+              geom_violin(width = 1) +
+              stat_boxplot(geom = "errorbar", width = 0.15,color = "#C2185B") +
+              geom_boxplot(width=0.2, color="#C2185B", alpha = 1 ) +
+              scale_fill_manual(values = c("#023047")) +
+              labs(title = "Distribución variable percentsalaryhike")+
+              theme_minimal()+
+              theme(axis.title.y = element_blank(),
+                    axis.title.x =element_blank(),
+                    axis.text.x = element_blank(),
+                    legend.position = "None",
+                    plot.title = element_text(size = 20, face = "bold")
+                    )
+```
+Observamos asimetría en los datos, pero en este caso no detectamos outliers por lo que no se hará un tratamiento especial de la variable **percentsalaryhike**
+
+
+-   [**Variables *totalworkingyears* y *trainingtimeslastyear***]{.hl-bluepastel}
+
+La variable **totalworkingyears** representa el número total de años trabajados de cada empleado. Se trata de una variable numérica.
+
+La variable **trainingtimeslastyear** se trata de el número de días destinados a charlas, cursos ... de un empleado en el anterior año laboral.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+gg_totalworkingyears <- dataset_attrition |> ggplot( aes(x=as.factor(1), y=totalworkingyears, fill = "#023047" )) +
+              geom_violin(width = 1) +
+              stat_boxplot(geom = "errorbar", width = 0.15,color = "#C2185B") +
+              geom_boxplot(width=0.2, color="#C2185B", alpha = 1 ) +
+              scale_fill_manual(values = c("#023047")) +
+              labs(title = "Distribución variable totalworkingyears")+
+              theme_minimal()+
+              theme(axis.title.y = element_blank(),
+                    axis.title.x =element_blank(),
+                    axis.text.x = element_blank(),
+                    legend.position = "None",
+                    plot.title = element_text(size = 12, face = "bold")
+                    )
+
+gg_trainingtimeslastyear <- dataset_attrition |> ggplot( aes(x=as.factor(1), y=trainingtimeslastyear, fill = "#023047" )) +
+              geom_violin(width = 1) +
+              stat_boxplot(geom = "errorbar", width = 0.15,color = "#C2185B") +
+              geom_boxplot(width=0.2, color="#C2185B", alpha = 1 ) +
+              scale_fill_manual(values = c("#023047")) +
+              labs(title = "Distribución variable trainingtimeslastyear")+
+              theme_minimal()+
+              theme(axis.title.y = element_blank(),
+                    axis.title.x =element_blank(),
+                    axis.text.x = element_blank(),
+                    legend.position = "None",
+                    plot.title = element_text(size = 12, face = "bold")
+                    )
+
+ggarrange(gg_totalworkingyears,gg_trainingtimeslastyear, ncol=2, common.legend = TRUE, legend = "none")
+```
+Con esta gráfica podemos deducir que la distribución de **totalworkingyears** presenta asimetría y valores outliers. 
+
+Por otro lado la distribución de **trainingtimelastyear** es simétrica aunque observamos que los valores bajos tienen mucha mayor variabilidad respecto a la mediana. En esta gráfica también encontramos ciertos valores outliers por lo que se deberá hacer un tratamiento de esta variable de la misma forma que de **totalworkingyears**.
+
+
+#### Relación de variables con la variable objetivo
+
+-   [**Variable *gender***]{.hl-bluepastel}
+
+Las tasas de abandono del puesto laboral en función de la variable **gender** son las siguientes:
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+attrition_male <- round(min(dataset_attrition |> group_by(gender) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(gender == "Male" & attrition == "1") |> select(attrition_ratio)),2)
+
+attrition_female <- round(min(dataset_attrition |> group_by(gender) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(gender == "Female" & attrition == "1") |> select(attrition_ratio)),2)
+
+
+dataset_attrition |> group_by(gender) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |>
+ggplot(aes(x = gender, y = attrition_ratio, fill = attrition))+
+geom_col()+
+coord_flip()+
+annotate("text", x = 1, y= 20, label= paste(attrition_female,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+annotate("text", x = 2, y= 20, label= paste(attrition_male,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+scale_fill_manual(values = c("#AAEAAA", "#A4185B"))+
+labs(title = "Gender employee attrition (%)")+
+theme_minimal()+
+theme(axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.y = element_text(size = 12, face = "bold"),
+      legend.position = "None",
+      plot.title = element_text(size = 12, face = "bold")
+      )
+```
+
+Podemos observar como existe una mayor tasa de abandono laboral por parte de las mujeres (la tasa en mujeres supone un 12.01% de diferencia respecto a los hombres).
+
+
+Otro aspecto interesante a observar en función de nuestra variable objetivo puede ser el departamento. Así se podrá conocer el departamento en el que más abandono laboral se produce dentro de la empresa.
+
+-   [**Variable *businesstravel***]{.hl-bluepastel}
+
+En primer lugar vamos a categorizar la variable **businesstravel**:
+
+```{r}
+dataset_attrition$businesstravel <- as.factor(dataset_attrition$businesstravel)
+```
+
+Las tasas de abandono del puesto laboral en función de la variable **businesstravel** son las siguientes:
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+attrition_not_travel <- round(min(dataset_attrition |> group_by(businesstravel) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(businesstravel == "0" & attrition == "1") |> select(attrition_ratio)),2)
+
+attrition_travel <- round(min(dataset_attrition |> group_by(businesstravel) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(businesstravel == "1" & attrition == "1") |> select(attrition_ratio)),2)
+
+
+dataset_attrition |> group_by(businesstravel) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |>
+ggplot(aes(x = businesstravel, y = attrition_ratio, fill = attrition))+
+geom_col()+
+annotate("text", x = 1, y= 20, label= paste(attrition_not_travel,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+annotate("text", x = 2, y= 20, label= paste(attrition_travel,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+scale_fill_manual(values = c("#AAEAAA", "#A4185B"))+
+labs(title = "Businesstravel employee attrition (%)")+
+theme_minimal()+
+theme(axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.y = element_text(size = 12, face = "bold"),
+      legend.position = "None",
+      plot.title = element_text(size = 12, face = "bold")
+      )
+```
+Existe un mayor abandono laboral en los empleados que realizan viajes (12,17%) que en los que no realizan ningún tipo de viaje (9.3%)
+
+
+-   [**Variable *department***]{.hl-bluepastel}
+
+Para relacionar la variable **department** con la variable objetivo simplemente se va a filtrar en función de los diferentes departamentos de la empresa.
+
+En este punto convertiremos ya la variable **department** a categórica.
+
+```{r}
+dataset_attrition$department <- as.factor(dataset_attrition$department)
+```
+
+
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+attrition_Cardiology <- round(min(dataset_attrition |> group_by(department) |> count(attrition) |> mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(department == "Cardiology" & attrition == "1") |> select(attrition_ratio)),2)
+
+attrition_Maternity <- round(min(dataset_attrition |> group_by(department) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(department == "Maternity" & attrition == "1") |> select(attrition_ratio)),2)
+
+attrition_Neurology <- round(min(dataset_attrition |> group_by(department) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(department == "Neurology" & attrition == "1") |> select(attrition_ratio)),2)
+
+dataset_attrition |> group_by(department) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |>
+ggplot(aes(x = department, y = attrition_ratio, fill = attrition))+
+geom_col()+
+coord_flip()+
+annotate("text", x = 1, y= 20, label= paste(attrition_Cardiology,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+annotate("text", x = 2, y= 20, label= paste(attrition_Maternity,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+annotate("text", x = 3, y= 20, label= paste(attrition_Neurology,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+scale_fill_manual(values = c("#AAEAAA", "#A4185B"))+
+labs(title = "Department employee attrition (%)")+
+theme_minimal()+
+theme(axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.y = element_text(size = 12, face = "bold"),
+      legend.position = "None",
+      plot.title = element_text(size = 12, face = "bold")
+      )
+```
+El departamento en el que más abandono laboral se produce es el de **cardiología** y en el que menos con bastante diferencia es el de **neurología**. Por lo que interpretando estos datos, podría haber peores condiciones laborales en el departamento de cardiología.
+
+Por último, respecto a las variables que originalmente eran de tipo character, se va a observar también la relación de la variable objetivo con la variable **overtime**
+
+
+
+-   [**Variable *educationfield, jobrole y maritalstatus***]{.hl-bluepastel}
+
+Se van a relacionar con nuestra variable objetivo las variables **educationfield**, **jobrole** y **maritalstatus**.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+
+attrition_lsciences <-  round(min(dataset_attrition |> group_by(educationfield) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(educationfield == 'Life sciences' & attrition == 1) |> select(attrition_ratio)),2)
+
+attrition_other <-  round(min(dataset_attrition |> group_by(educationfield) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(educationfield == 'Other' & attrition == 1) |> select(attrition_ratio)),2)
+
+attrition_ssciences <-  round(min(dataset_attrition |> group_by(educationfield) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(educationfield == 'Social sciences' & attrition == 1) |> select(attrition_ratio)),2)
+
+attrition_tsciences <-  round(min(dataset_attrition |> group_by(educationfield) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(educationfield == 'Technological sciences' & attrition == 1) |> select(attrition_ratio)),2)
+
+
+
+
+dataset_attrition |> group_by(educationfield) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |>
+ggplot(aes(x = as.factor(educationfield), y = attrition_ratio, fill = attrition))+
+geom_col()+
+labs(title = "Educationfield employee attrition (%)") + 
+annotate("text", x = 1, y= 20, label= paste(attrition_lsciences,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+annotate("text", x = 2, y= 20, label= paste(attrition_other,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") +
+annotate("text", x = 3, y= 20, label= paste(attrition_ssciences,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+annotate("text", x = 4, y= 20, label= paste(attrition_tsciences,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") +
+scale_fill_manual(values = c("#AAEAAA", "#A4185B"))+
+theme_minimal()+
+theme(axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 10, face = "bold"),
+      legend.position = "None",
+      plot.title = element_text(size = 12, face = "bold")
+      )
+
+```
+
+
+En cuanto a la variable **educationfield** es destacable que los campos con más tasa de abandono laboral son las ciencias sociales y las ciencias tecnológicas.
+
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+attrition_admin <-  round(min(dataset_attrition |> group_by(jobrole) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(jobrole == 'Administrative' & attrition == 1) |> select(attrition_ratio)),2)
+
+attrition_nurse <-  round(min(dataset_attrition |> group_by(jobrole) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(jobrole == 'Nurse' & attrition == 1) |> select(attrition_ratio)),2)
+
+attrition_other <-  round(min(dataset_attrition |> group_by(jobrole) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(jobrole == 'Other' & attrition == 1) |> select(attrition_ratio)),2)
+
+attrition_therapist <-  round(min(dataset_attrition |> group_by(jobrole) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(jobrole == 'Therapist' & attrition == 1) |> select(attrition_ratio)),2)
+
+
+dataset_attrition |> group_by(jobrole) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |>
+ggplot(aes(x = as.factor(jobrole), y = attrition_ratio, fill = attrition))+
+geom_col()+
+labs(title = "Jobrole employee attrition (%)") + 
+annotate("text", x = 1, y= 20, label= paste(attrition_admin,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+annotate("text", x = 2, y= 20, label= paste(attrition_nurse,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") +
+annotate("text", x = 3, y= 20, label= paste(attrition_other,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+annotate("text", x = 4, y= 20, label= paste(attrition_therapist,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") +
+scale_fill_manual(values = c("#AAEAAA", "#A4185B"))+
+theme_minimal()+
+theme(axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 10, face = "bold"),
+      legend.position = "None",
+      plot.title = element_text(size = 12, face = "bold")
+      )
+```
+
+Por otro lado, en la variable **jobrole**, es muy destacable que los administrativos y terapeutas no tienen casi tasa de abandono laboral pero puestos como enfermera u otros tienen una muy alta tasa.
+
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+attrition_divorced <-  round(min(dataset_attrition |> group_by(maritalstatus) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(maritalstatus == 'Divorced' & attrition == 1) |> select(attrition_ratio)),2)
+
+attrition_married <-  round(min(dataset_attrition |> group_by(maritalstatus) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(maritalstatus == 'Married' & attrition == 1) |> select(attrition_ratio)),2)
+
+attrition_single <-  round(min(dataset_attrition |> group_by(maritalstatus) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(maritalstatus == 'Single' & attrition == 1) |> select(attrition_ratio)),2)
+
+
+dataset_attrition |> group_by(maritalstatus) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |>
+ggplot(aes(x = as.factor(maritalstatus), y = attrition_ratio, fill = attrition))+
+geom_col()+
+labs(title = "Maritalstatus employee attrition (%)") + 
+annotate("text", x = 1, y= 20, label= paste(attrition_divorced,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+annotate("text", x = 2, y= 20, label= paste(attrition_married,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") +
+annotate("text", x = 3, y= 30, label= paste(attrition_single,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+scale_fill_manual(values = c("#AAEAAA", "#A4185B"))+
+theme_minimal()+
+theme(axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 10, face = "bold"),
+      legend.position = "None",
+      plot.title = element_text(size = 12, face = "bold")
+      )
+
+```
+
+Podemos bservamos en la variable **maritalstatus** que las personas solteras son las que mayor tasa de abandono tienen (21.84%). Esto puede indicar que son personas que no necesitan tanta estabilidad laboral como personas que están casadas o divorciadas.
+
+
+-   [**Variable *overtime***]{.hl-bluepastel}
+
+Convertimos inicialmente la variable **overtime** a categórica.
+
+```{r}
+dataset_attrition$overtime <- as.factor(dataset_attrition$overtime)
+```
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+attrition_ovty <- round(min(dataset_attrition |> group_by(overtime) |> count(attrition) |> mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(overtime == "1" & attrition == "1") |> select(attrition_ratio)),2)
+
+attrition_ovtn <- round(min(dataset_attrition |> group_by(overtime) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(overtime == "0" & attrition == "1") |> select(attrition_ratio)),2)
+
+dataset_attrition |> group_by(overtime) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |>
+ggplot(aes(x = overtime, y = attrition_ratio, fill = attrition))+
+geom_col()+
+annotate("text", x = 2, y= 40, label= paste(attrition_ovty,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+annotate("text", x = 1, y= 20, label= paste(attrition_ovtn,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+scale_fill_manual(values = c("#AAEAAA", "#A4185B"))+
+labs(title = "Overtime employee attrition (%)")+
+theme_minimal()+
+theme(axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 12, face = "bold"),
+      legend.position = "None",
+      plot.title = element_text(size = 12, face = "bold")
+      )
+```
+Los empleados que trabajan horas extra tienen una tasa de abandono laboral que supone un 484% de diferencia respecto a los empleados que no realizan horas extra por lo que podemos ver que es un factor muy clave en el abandono laboral.
+
+
+-   [**Variable *age***]{.hl-bluepastel}
+
+Para relacionar la variable **age** con nuestra variable objetivo se van a realizar varias particiones en tramos.
+
+El primer tramo será de **18 a 25 años**, el segundo tramo de **25 a 35 años**, el tercer tramo de **35 a 45 años** y el último tramo desde estos **45 años** hasta la edad máxima de nuestro conjunto de datos.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+max_age <- max(dataset_attrition$age, na.rm = TRUE)
+
+dataset_attrition_age <- dataset_attrition |> mutate(age_cat = case_when(age < 25 ~ "[18 - 25)",
+                                                    age < 35 ~ "[25 - 35)",
+                                                    age < 45 ~ "[35 - 45)",
+                                                    age <= max_age ~ "[45 - 60]")) |> 
+                                      select(age, age_cat, attrition) |> 
+                                      group_by(age_cat) |> count(attrition) |>
+                                      mutate(attrition_ratio = 100*n/sum(n),
+                                      age_cat = factor(age_cat, levels = c("[18 - 25)", "[25 - 35)","[35 - 45)", "[45 - 60]"))
+                                        )|> ungroup()
+
+attrition_18_25 <-  round(min(dataset_attrition_age |> filter(age_cat == "[18 - 25)" & attrition == "1") |> select(attrition_ratio)),2)
+attrition_25_35 <-  round(min(dataset_attrition_age |> filter(age_cat == "[25 - 35)" & attrition == "1") |> select(attrition_ratio)),2)
+attrition_35_45 <-  round(min(dataset_attrition_age |> filter(age_cat == "[35 - 45)" & attrition == "1") |> select(attrition_ratio)),2)
+attrition_45_60 <-  round(min(dataset_attrition_age |> filter(age_cat == "[45 - 60]" & attrition == "1") |> select(attrition_ratio)),2)
+
+dataset_attrition_age |>  ggplot(aes(x = age_cat, y = attrition_ratio, fill = attrition))+
+geom_col()+
+coord_flip()+
+annotate("text", x = 1, y= 70, label= paste(attrition_18_25,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") +
+annotate("text", x = 2, y= 70, label= paste(attrition_25_35,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") +
+annotate("text", x = 3, y= 25, label= paste(attrition_35_45,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+annotate("text", x = 4, y= 25, label= paste(attrition_45_60,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") +
+scale_fill_manual(values = c("#AAEAAA", "#A4185B"))+
+labs(title = "Age employee attrition (%)")+
+theme_minimal()+
+theme(axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.y = element_text(size = 12, face = "bold"),
+      legend.position = "None",
+      plot.title = element_text(size = 12, face = "bold")
+      )
+```
+
+Se puede observar de forma clara como los empleados que van desde los **18 a 25 años** son los que tienen una mayor tasa de abandono laboral y con el paso de los años comienza a reducirse de manera considerable siendo la menor tasa de abandono desde los **45 años** hasta la edad máxima de nuestro conjunto de datos.
+
+
+-   [**Variable *distancefromhome***]{.hl-bluepastel}
+
+Para realizar una correcta visualización de la relación entre la variable objetivo y la variable **distancefromhome**, se va a realizar una estratificación univariada de Dalenius-Hodges en la cual dividiremos entre varios tramos de distancia desde distancia **'Muy lejana'** hasta **Muy corta**.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+dataset_attrition_dist <- dataset_attrition |> mutate(cat_distfromhome = strata.cumrootf(distancefromhome, CV=0.05, Ls = 5)[["stratumID"]]) |> 
+mutate(cat_distfromhome = case_when(cat_distfromhome == "5" ~ "Muy lejana",
+          cat_distfromhome == "4" ~ "Lejana",
+          cat_distfromhome == "3" ~ "Media",
+          cat_distfromhome == "2" ~ "Corta",
+          TRUE ~ "Muy corta")) |>
+arrange(desc(distancefromhome)) |> 
+ select(cat_distfromhome, attrition) 
+
+
+plot_dist_dfromhome <- dataset_attrition_dist |> group_by(cat_distfromhome) |> summarise(n = n(), percentage = round(n()*100.0/nrow(dataset_attrition_dist),2)) |> 
+  ggplot(aes(x = factor(cat_distfromhome,levels = c("Muy corta","Corta","Media","Lejana","Muy lejana")), y = n)) +
+  geom_col(position = "dodge", alpha =0.8,fill = "#AAEAAA") +
+  geom_text(aes(label = paste(n," (",percentage,"%)", sep ="")), colour = "#A4185B", size = 3,vjust = 0,hjust =1.2, angle = 90,  position = position_dodge(.9)) +
+  theme_minimal()+
+  theme(plot.title = element_text(size = 20, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 10, angle = 90, face =  "bold"),
+      legend.position = "None"
+      )
+
+
+attr_1 <-  round(min(dataset_attrition_dist |> group_by(cat_distfromhome) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> 
+                              filter(cat_distfromhome == "Muy lejana" & attrition == 1) |> select(attrition_ratio)),2)
+attr_2 <-  round(min(dataset_attrition_dist |> group_by(cat_distfromhome) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> 
+                              filter(cat_distfromhome == "Lejana" & attrition == 1) |> select(attrition_ratio)),2)
+attr_3 <-  round(min(dataset_attrition_dist |> group_by(cat_distfromhome) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> 
+                              filter(cat_distfromhome == "Media" & attrition == 1) |> select(attrition_ratio)),2)
+attr_4 <-  round(min(dataset_attrition_dist |> group_by(cat_distfromhome) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> 
+                              filter(cat_distfromhome == "Corta" & attrition == 1) |> select(attrition_ratio)),2)
+attr_5 <-  round(min(dataset_attrition_dist |> group_by(cat_distfromhome) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> 
+                              filter(cat_distfromhome == "Muy corta" & attrition == 1) |>  select(attrition_ratio)),2)
+
+
+
+
+plot_cat_dfromhome <- dataset_attrition_dist |> group_by(cat_distfromhome) |> count(attrition) |>  mutate(stroke_ratio = 100*n/sum(n)) |>
+ggplot(aes(x = factor(cat_distfromhome,levels = c("Muy corta","Corta","Media","Lejana","Muy lejana")), y = stroke_ratio, fill = attrition))+
+geom_col()+
+annotate("text", x = 1, y= 20, label= paste(attr_5,"%", sep =""),size = 3 , color = "#A4185B",fontface = "bold") + 
+annotate("text", x = 2, y= 20, label= paste(attr_4,"%", sep =""),size = 3 , color = "#A4185B",fontface = "bold") + 
+annotate("text", x = 3, y= 20, label= paste(attr_3,"%", sep =""),size = 3 , color = "#A4185B",fontface = "bold") +  
+annotate("text", x = 4, y= 20, label= paste(attr_2,"%", sep =""),size = 3 , color = "#A4185B",fontface = "bold") +  
+annotate("text", x = 5, y= 25, label= paste(attr_1,"%", sep =""),size = 3 , color = "#A4185B",fontface = "bold") +  
+scale_fill_manual(values = c("#AAEAAA", "#A4185B"))+
+theme_minimal()+
+theme(plot.title = element_text(size = 20, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 10, angle = 90, face =  "bold"),
+      legend.position = "None"
+      )
+
+ggarrange(plot_dist_dfromhome, plot_cat_dfromhome, ncol=2)
+```
+
+Podemos observar que la mayoría de los empleados viven a una distancia muy corta del trabajo y a medida que esta distancia aumenta el número de empleados disminuye. Tambíen es destacable que en la distancia más lejana hay un leve aumento de empleados.
+
+Por otro lado los empleados con **Muy corta** o **Corta** distancia al trabajo tienen una menor tasa de abandono **(9.2% - 9.48%)**. A medida que la distancia aumenta, la tasa de abandono también lo hace y los empleados que tienen una **Muy lejana** distancia tienen la mayor tasa de abandono **(20.83%)**, lo que sugiere que una mayor distancia al trabajo podría estar relacionada con un mayor desgaste y mayor rotación laboral.
+
+-   [**Variable *education***]{.hl-bluepastel}
+
+Antes de relacionar **education** con nuestra variable objetivo, convertiremos la variable a categórica:
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+dataset_attrition$education = as.factor(dataset_attrition$education)
+```
+
+Se va a relacionar la variable **education** mediante un gráfico que nos muestra las tasas de abandono por nivel educativo:
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+attrition_ed1 <- round(min(dataset_attrition |> group_by(education) |> count(attrition) |> mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(education == "1" & attrition == "1") |> select(attrition_ratio)),2)
+
+attrition_ed2 <- round(min(dataset_attrition |> group_by(education) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(education == "2" & attrition == "1") |> select(attrition_ratio)),2)
+
+attrition_ed3 <- round(min(dataset_attrition |> group_by(education) |> count(attrition) |> mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(education == "3" & attrition == "1") |> select(attrition_ratio)),2)
+
+attrition_ed4 <- round(min(dataset_attrition |> group_by(education) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(education == "4" & attrition == "1") |> select(attrition_ratio)),2)
+
+attrition_ed5 <- round(min(dataset_attrition |> group_by(education) |> count(attrition) |> mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(education == "5" & attrition == "1") |> select(attrition_ratio)),2)
+
+dataset_attrition |> group_by(education) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |>
+ggplot(aes(x = education, y = attrition_ratio, fill = attrition))+
+geom_col()+
+annotate("text", x = 5, y = 20, label= paste(attrition_ed5,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+annotate("text", x = 4, y = 20, label= paste(attrition_ed4,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+  annotate("text", x = 3, y = 20, label= paste(attrition_ed3,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+annotate("text", x = 2, y = 20, label= paste(attrition_ed2,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+  annotate("text", x = 1, y = 20, label= paste(attrition_ed1,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+scale_fill_manual(values = c("#AAEAAA", "#A4185B"))+
+labs(title = "Education - employee attrition (%)")+
+theme_minimal()+
+theme(axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 12, face = "bold"),
+      legend.position = "None",
+      plot.title = element_text(size = 12, face = "bold")
+      )
+```
+
+Visualizando la relación entre la variable objetivo y nuestros niveles de educación recogidos en la variable **education**, podemos deducir que en general que el abandono laboral es bastante similar independientemente del nivel de educación, a excepción de las personas que tienen un muy alto nivel educativo que son las que menor porcentaje de abandono tienen (1.79%)
+
+-   [**Variable *joblevel* y *shift***]{.hl-bluepastel}
+
+Tanto la variable **joblevel** como la variable **shift** se tratan de variables que a pesar de ser númericas inicialmente, deben de ser tratadas como categóricas por lo que se van a convertir a categóricas:
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+dataset_attrition$joblevel = as.factor(dataset_attrition$joblevel)
+
+dataset_attrition$shift = as.factor(dataset_attrition$shift)
+```
+
+Se va a visualizar la relación de nuestra variable objetivo con estas dos variables:
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+attrition_jb1 <- round(min(dataset_attrition |> group_by(joblevel) |> count(attrition) |> mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(joblevel == "1" & attrition == "1") |> select(attrition_ratio)),2)
+
+attrition_jb2 <- round(min(dataset_attrition |> group_by(joblevel) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(joblevel == "2" & attrition == "1") |> select(attrition_ratio)),2)
+
+attrition_jb3 <- round(min(dataset_attrition |> group_by(joblevel) |> count(attrition) |> mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(joblevel == "3" & attrition == "1") |> select(attrition_ratio)),2)
+
+attrition_jb4 <- round(min(dataset_attrition |> group_by(joblevel) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(joblevel == "4" & attrition == "1") |> select(attrition_ratio)),2)
+
+attrition_jb5 <- round(min(dataset_attrition |> group_by(joblevel) |> count(attrition) |> mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(joblevel == "5" & attrition == "1") |> select(attrition_ratio)),2)
+
+plot_joblevel <- dataset_attrition |> group_by(joblevel) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |>
+ggplot(aes(x = joblevel, y = attrition_ratio, fill = attrition))+
+geom_col()+
+annotate("text", x = 5, y = 30, label= paste(attrition_jb5,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+annotate("text", x = 4, y = 30, label= paste(attrition_jb4,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+  annotate("text", x = 3, y = 30, label= paste(attrition_jb3,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+annotate("text", x = 2, y = 30, label= paste(attrition_jb2,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+  annotate("text", x = 1, y = 30, label= paste(attrition_jb1,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+scale_fill_manual(values = c("#AAEAAA", "#A4185B"))+
+labs(title = "Joblevel - employee attrition (%)")+
+theme_minimal()+
+theme(axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 12, face = "bold"),
+      legend.position = "None",
+      plot.title = element_text(size = 12, face = "bold")
+      )
+
+attrition_s1 <- round(min(dataset_attrition |> group_by(shift) |> count(attrition) |> mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(shift == "0" & attrition == "1") |> select(attrition_ratio)),2)
+
+attrition_s2 <- round(min(dataset_attrition |> group_by(shift) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(shift == "1" & attrition == "1") |> select(attrition_ratio)),2)
+
+attrition_s3 <- round(min(dataset_attrition |> group_by(shift) |> count(attrition) |> mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(shift == "2" & attrition == "1") |> select(attrition_ratio)),2)
+
+attrition_s4 <- round(min(dataset_attrition |> group_by(shift) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> filter(shift == "3" & attrition == "1") |> select(attrition_ratio)),2)
+
+plot_shift <- dataset_attrition |> group_by(shift) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |>
+ggplot(aes(x = shift, y = attrition_ratio, fill = attrition))+
+geom_col()+
+annotate("text", x = 4, y = 30, label= paste(attrition_s4,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+  annotate("text", x = 3, y = 30, label= paste(attrition_s3,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+annotate("text", x = 2, y = 30, label= paste(attrition_s2,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+  annotate("text", x = 1, y = 30, label= paste(attrition_s1,"%", sep =""),size = 4 , color = "#A4185B",fontface = "bold") + 
+scale_fill_manual(values = c("#AAEAAA", "#A4185B"))+
+labs(title = "Shift - employee attrition (%)")+
+theme_minimal()+
+theme(axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 12, face = "bold"),
+      legend.position = "None",
+      plot.title = element_text(size = 12, face = "bold")
+      )
+
+ggarrange(plot_joblevel, plot_shift, ncol=2)
+```
+
+En el **joblevel** podemos detectar como la gente que menos nivel tiene dentro de la propia empresa es la más propensa a abandonar el trabajo y conforme suben de nivel se va reduciendo hasta una tasa muy inferior a la inicial como es 2.47%
+
+En cuanto a los turnos, es destacable que la gente que tiene su propia agenda **(0 - Employees with own schedule)** es la que tiene una mayor tasa de abandono labora, seguida eso sí, del turno de noche **(3 - 9pm to 7am)**
+
+
+-   [**Variable *monthlyincome***]{.hl-bluepastel}
+
+Para relacionar la variable objetivo con la variable **monthlyincome** se va a emplear la técnica de los percentiles.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+percentiles <- quantile(dataset_attrition$monthlyincome, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE)
+
+attrition_cat_mincome <- dataset_attrition |> 
+  mutate(cat_mincome = case_when(
+    monthlyincome <= percentiles[2] ~ "P0 - P25",
+    monthlyincome <= percentiles[3] ~ "P25 - P50",
+    monthlyincome <= percentiles[4] ~ "P50 - P75",
+    TRUE ~ "P75 - P100"
+  )) |> 
+  select(monthlyincome, cat_mincome, attrition) |> 
+  group_by(cat_mincome) |> 
+  count(attrition) |>
+  mutate(attrition_ratio = 100 * n / sum(n),
+         cat_mincome = factor(cat_mincome, levels = c("P0 - P25", "P25 - P50", "P50 - P75", "P75 - P100"))
+  ) |> ungroup()
+
+attr_mincome_1 <- round(min(attrition_cat_mincome |> filter(cat_mincome == "P0 - P25" & attrition == "1") |> select(attrition_ratio)), 2)
+attr_mincome_2 <- round(min(attrition_cat_mincome |> filter(cat_mincome == "P25 - P50" & attrition == "1") |> select(attrition_ratio)), 2)
+attr_mincome_3 <- round(min(attrition_cat_mincome |> filter(cat_mincome == "P50 - P75" & attrition == "1") |> select(attrition_ratio)), 2)
+attr_mincome_4 <- round(min(attrition_cat_mincome |> filter(cat_mincome == "P75 - P100" & attrition == "1") |> select(attrition_ratio)), 2)
+
+attrition_cat_mincome |>
+  ggplot(aes(x = cat_mincome, y = attrition_ratio, fill = attrition)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Monthly income - employee attrition (%)")+
+  annotate("text", x = 1, y = 40, label= paste(attr_mincome_1, "%", sep = ""), size = 4, color = "#A4185B", fontface = "bold") + 
+  annotate("text", x = 2, y = 40, label= paste(attr_mincome_2, "%", sep = ""), size = 4, color = "#A4185B", fontface = "bold") + 
+  annotate("text", x = 3, y = 40, label= paste(attr_mincome_3, "%", sep = ""), size = 4, color = "#A4185B", fontface = "bold") + 
+  annotate("text", x = 4, y = 40, label= paste(attr_mincome_4, "%", sep = ""), size = 4, color = "#A4185B", fontface = "bold") + 
+  scale_fill_manual(values = c("#AAEAAA", "#A4185B")) +
+  theme_minimal() +
+  theme(axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.y = element_text(size = 12, face = "bold"),
+        legend.position = "None",
+        plot.title = element_text(size = 12, face = "bold"))
+```
+
+Podemos observar que en el percentil **P0 - P25** (los empleados con los ingresos más bajos) existe la mayor tasa de abandono del empleo 27.45%. Y conforme van subiendo los sueldos esta tasa disminuye considerablemente hasta un 4.77%
+
+
+-   [**Variable *numcompaniesworked***]{.hl-bluepastel}
+
+Empleando de nuevo la técnica de división en percentiles se va a visualizar la relación entre **numcompaniesworked** y la variable objetivo.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+percentiles <- quantile(dataset_attrition$numcompaniesworked, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE)
+
+attrition_cat_ncwork <- dataset_attrition |> 
+  mutate(cat_ncwork = case_when(
+    numcompaniesworked <= percentiles[2] ~ "P0 - P25",
+    numcompaniesworked <= percentiles[3] ~ "P25 - P50",
+    numcompaniesworked <= percentiles[4] ~ "P50 - P75",
+    TRUE ~ "P75 - P100"
+  )) |> 
+  select(numcompaniesworked, cat_ncwork, attrition) |> 
+  group_by(cat_ncwork) |> 
+  count(attrition) |>
+  mutate(attrition_ratio = 100 * n / sum(n),
+         cat_ncwork = factor(cat_ncwork, levels = c("P0 - P25", "P25 - P50", "P50 - P75", "P75 - P100"))
+  ) |> ungroup()
+
+attr_mincome_1 <- round(min(attrition_cat_ncwork |> filter(cat_ncwork == "P0 - P25" & attrition == "1") |> select(attrition_ratio)), 2)
+attr_mincome_2 <- round(min(attrition_cat_ncwork |> filter(cat_ncwork == "P25 - P50" & attrition == "1") |> select(attrition_ratio)), 2)
+attr_mincome_3 <- round(min(attrition_cat_ncwork |> filter(cat_ncwork == "P50 - P75" & attrition == "1") |> select(attrition_ratio)), 2)
+attr_mincome_4 <- round(min(attrition_cat_ncwork |> filter(cat_ncwork == "P75 - P100" & attrition == "1") |> select(attrition_ratio)), 2)
+
+attrition_cat_ncwork |>
+  ggplot(aes(x = cat_ncwork, y = attrition_ratio, fill = attrition)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Num companies worked - employee attrition (%)")+
+  annotate("text", x = 1, y = 40, label= paste(attr_mincome_1, "%", sep = ""), size = 4, color = "#A4185B", fontface = "bold") + 
+  annotate("text", x = 2, y = 40, label= paste(attr_mincome_2, "%", sep = ""), size = 4, color = "#A4185B", fontface = "bold") + 
+  annotate("text", x = 3, y = 40, label= paste(attr_mincome_3, "%", sep = ""), size = 4, color = "#A4185B", fontface = "bold") + 
+  annotate("text", x = 4, y = 40, label= paste(attr_mincome_4, "%", sep = ""), size = 4, color = "#A4185B", fontface = "bold") + 
+  scale_fill_manual(values = c("#AAEAAA", "#A4185B")) +
+  theme_minimal() +
+  theme(axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.y = element_text(size = 12, face = "bold"),
+        legend.position = "None",
+        plot.title = element_text(size = 12, face = "bold"))
+```
+
+En esta gráfica podemos ver como los empleados que han estado en pocas compañías tienen una tasa de abandono bastante alta **(13.71%)**, aun así, los que más abandono tienen son los que han estado en más trabajos **(16.03%)**. Esto sugiere que aquellos que han cambiado de empresa frecuentemente en el pasado tienen más probabilidades de abandonar su trabajo actual.
+
+-   [**Variable *percentsalaryhike***]{.hl-bluepastel}
+
+La relación entre **percentsalaryhike** y la variable objetivo se va a calcular también a partir de percentiles:
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+percentiles <- quantile(dataset_attrition$percentsalaryhike, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE)
+
+attrition_cat_pshike <- dataset_attrition |> 
+  mutate(cat_pshike = case_when(
+    percentsalaryhike <= percentiles[2] ~ "P0 - P25",
+    percentsalaryhike <= percentiles[3] ~ "P25 - P50",
+    percentsalaryhike <= percentiles[4] ~ "P50 - P75",
+    TRUE ~ "P75 - P100"
+  )) |> 
+  select(percentsalaryhike, cat_pshike, attrition) |> 
+  group_by(cat_pshike) |> 
+  count(attrition) |>
+  mutate(attrition_ratio = 100 * n / sum(n),
+         cat_pshike = factor(cat_pshike, levels = c("P0 - P25", "P25 - P50", "P50 - P75", "P75 - P100"))
+  ) |> ungroup()
+
+attr_pshike_1 <- round(min(attrition_cat_pshike |> filter(cat_pshike == "P0 - P25" & attrition == "1") |> select(attrition_ratio)), 2)
+attr_pshike_2 <- round(min(attrition_cat_pshike |> filter(cat_pshike == "P25 - P50" & attrition == "1") |> select(attrition_ratio)), 2)
+attr_pshike_3 <- round(min(attrition_cat_pshike |> filter(cat_pshike == "P50 - P75" & attrition == "1") |> select(attrition_ratio)), 2)
+attr_pshike_4 <- round(min(attrition_cat_pshike |> filter(cat_pshike == "P75 - P100" & attrition == "1") |> select(attrition_ratio)), 2)
+
+attrition_cat_pshike |>
+  ggplot(aes(x = cat_pshike, y = attrition_ratio, fill = attrition)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Percent salary hike - employee attrition (%)")+
+  annotate("text", x = 1, y = 40, label= paste(attr_pshike_1, "%", sep = ""), size = 4, color = "#A4185B", fontface = "bold") + 
+  annotate("text", x = 2, y = 40, label= paste(attr_pshike_2, "%", sep = ""), size = 4, color = "#A4185B", fontface = "bold") + 
+  annotate("text", x = 3, y = 40, label= paste(attr_pshike_3, "%", sep = ""), size = 4, color = "#A4185B", fontface = "bold") + 
+  annotate("text", x = 4, y = 40, label= paste(attr_pshike_4, "%", sep = ""), size = 4, color = "#A4185B", fontface = "bold") + 
+  scale_fill_manual(values = c("#AAEAAA", "#A4185B")) +
+  theme_minimal() +
+  theme(axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.y = element_text(size = 12, face = "bold"),
+        legend.position = "None",
+        plot.title = element_text(size = 12, face = "bold"))
+```
+
+Se puede observar como existe una tasa de abandono laboral bastante similar en todos los niveles por lo que parece que la variable **percentsalaryhike** puede no estar aportando mucha información a nuestra variable objetivo. Para comprobar si realmente es útil posteriormente se realizará un contraste de independencia viendo si tiene sentido o no mantener esta variable.
+
+
+-   [**Variable *totalworkingyears***]{.hl-bluepastel}
+
+Para relacionar la variable objetivo con la variable **totalworkingyears** y previendo una posible distribución irregular en la que existen pocos empleados en ciertas franjas de experiencia como pueden ser los muy experimentados, se ha seleccionado el método de Dalenius-Hodges.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+dataset_attrition_twyears <- dataset_attrition |> mutate(cat_twyears = strata.cumrootf(totalworkingyears, CV=0.05, Ls = 5)[["stratumID"]]) |> 
+mutate(cat_twyears = case_when(cat_twyears == "5" ~ "Senior",
+          cat_twyears == "4" ~ "Mid/Senior",
+          cat_twyears == "3" ~ "Mid",
+          cat_twyears == "2" ~ "Mid/Junior",
+          TRUE ~ "Junior")) |>
+arrange(desc(totalworkingyears)) |> 
+ select(cat_twyears, attrition) 
+
+
+plot_dist_twyears <- dataset_attrition_twyears |> group_by(cat_twyears) |> summarise(n = n(), percentage = round(n()*100.0/nrow(dataset_attrition_twyears),2)) |> 
+  ggplot(aes(x = factor(cat_twyears,levels = c("Junior","Mid/Junior","Mid","Mid/Senior","Senior")), y = n)) +
+  geom_col(position = "dodge", alpha =0.8,fill = "#AAEAAA") +
+  geom_text(aes(label = paste(n," (",percentage,"%)", sep ="")), colour = "#A4185B", size = 3,vjust = 0,hjust =1.2, angle = 90,  position = position_dodge(.9)) +
+  theme_minimal()+
+  theme(plot.title = element_text(size = 20, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 10, angle = 90, face =  "bold"),
+      legend.position = "None"
+      )
+
+
+attr_1 <-  round(min(dataset_attrition_twyears |> group_by(cat_twyears) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> 
+                              filter(cat_twyears == "Senior" & attrition == 1) |> select(attrition_ratio)),2)
+attr_2 <-  round(min(dataset_attrition_twyears |> group_by(cat_twyears) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> 
+                              filter(cat_twyears == "Mid/Senior" & attrition == 1) |> select(attrition_ratio)),2)
+attr_3 <-  round(min(dataset_attrition_twyears |> group_by(cat_twyears) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> 
+                              filter(cat_twyears == "Mid" & attrition == 1) |> select(attrition_ratio)),2)
+attr_4 <-  round(min(dataset_attrition_twyears |> group_by(cat_twyears) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> 
+                              filter(cat_twyears == "Mid/Junior" & attrition == 1) |> select(attrition_ratio)),2)
+attr_5 <-  round(min(dataset_attrition_twyears |> group_by(cat_twyears) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> 
+                              filter(cat_twyears == "Junior" & attrition == 1) |>  select(attrition_ratio)),2)
+
+
+plot_cat_twyears <- dataset_attrition_twyears |> group_by(cat_twyears) |> count(attrition) |>  mutate(stroke_ratio = 100*n/sum(n)) |>
+ggplot(aes(x = factor(cat_twyears,levels = c("Junior","Mid/Junior","Mid","Mid/Senior","Senior")), y = stroke_ratio, fill = attrition))+
+geom_col()+
+annotate("text", x = 1, y= 35, label= paste(attr_5,"%", sep =""),size = 3 , color = "#A4185B",fontface = "bold") + 
+annotate("text", x = 2, y= 20, label= paste(attr_4,"%", sep =""),size = 3 , color = "#A4185B",fontface = "bold") + 
+annotate("text", x = 3, y= 20, label= paste(attr_3,"%", sep =""),size = 3 , color = "#A4185B",fontface = "bold") +  
+annotate("text", x = 4, y= 20, label= paste(attr_2,"%", sep =""),size = 3 , color = "#A4185B",fontface = "bold") +  
+annotate("text", x = 5, y= 20, label= paste(attr_1,"%", sep =""),size = 3 , color = "#A4185B",fontface = "bold") +  
+scale_fill_manual(values = c("#AAEAAA", "#A4185B"))+
+theme_minimal()+
+theme(plot.title = element_text(size = 20, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 10, angle = 90, face =  "bold"),
+      legend.position = "None"
+      )
+
+ggarrange(plot_dist_twyears, plot_cat_twyears, ncol=2)
+```
+
+Podemos observar que la mayoría de empleados son Mid/Junior y a partir de esta franja, el numero de empleados comienza a descender hasta la menor tasa en los mas seniors donde es tan solo un **9.07%**.
+
+Por otro lado en cuanto a la relación de la variable objetivo con el numero de años trabajados, se observa que los empleados más juniors son los que más tasa de abandono laboral tienen con un **27.7%** y los más seniors los que menos con un **3.29%**.
+
+-   [**Variable *trainingtimeslastyear***]{.hl-bluepastel}
+
+Para la variable **trainingtimeslastyear** también se usará Dalenius dado que la distribución de esta variable es sesgada o discontinua y por tanto los percentiles no harían una división correcta.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+dataset_attrition_ttlyears <- dataset_attrition |> mutate(cat_ttlyears = strata.cumrootf(trainingtimeslastyear, CV=0.05, Ls = 5)[["stratumID"]]) |> 
+mutate(cat_ttlyears = case_when(cat_ttlyears == "5" ~ "Muy alto",
+          cat_ttlyears == "4" ~ "Alto",
+          cat_ttlyears == "3" ~ "Medio",
+          cat_ttlyears == "2" ~ "Bajo",
+          TRUE ~ "Muy bajo")) |>
+arrange(desc(trainingtimeslastyear)) |> 
+ select(cat_ttlyears, attrition) 
+
+
+plot_dist_ttlyears <- dataset_attrition_ttlyears |> group_by(cat_ttlyears) |> summarise(n = n(), percentage = round(n()*100.0/nrow(dataset_attrition_ttlyears),2)) |> 
+  ggplot(aes(x = factor(cat_ttlyears,levels = c("Muy bajo","Bajo","Medio","Alto","Muy alto")), y = n)) +
+  geom_col(position = "dodge", alpha =0.8,fill = "#AAEAAA") +
+  geom_text(aes(label = paste(n," (",percentage,"%)", sep ="")), colour = "#A4185B", size = 3,vjust = 0,hjust =1.2, angle = 90,  position = position_dodge(.9)) +
+  theme_minimal()+
+  theme(plot.title = element_text(size = 20, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 10, angle = 90, face =  "bold"),
+      legend.position = "None"
+      )
+
+
+attr_1 <-  round(min(dataset_attrition_ttlyears |> group_by(cat_ttlyears) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> 
+                              filter(cat_ttlyears == "Muy alto" & attrition == 1) |> select(attrition_ratio)),2)
+attr_2 <-  round(min(dataset_attrition_ttlyears |> group_by(cat_ttlyears) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> 
+                              filter(cat_ttlyears == "Alto" & attrition == 1) |> select(attrition_ratio)),2)
+attr_3 <-  round(min(dataset_attrition_ttlyears |> group_by(cat_ttlyears) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> 
+                              filter(cat_ttlyears == "Medio" & attrition == 1) |> select(attrition_ratio)),2)
+attr_4 <-  round(min(dataset_attrition_ttlyears |> group_by(cat_ttlyears) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> 
+                              filter(cat_ttlyears == "Bajo" & attrition == 1) |> select(attrition_ratio)),2)
+attr_5 <-  round(min(dataset_attrition_ttlyears |> group_by(cat_ttlyears) |> count(attrition) |>  mutate(attrition_ratio = 100*n/sum(n)) |> ungroup() |> 
+                              filter(cat_ttlyears == "Muy bajo" & attrition == 1) |>  select(attrition_ratio)),2)
+
+
+plot_cat_ttlyears <- dataset_attrition_ttlyears |> group_by(cat_ttlyears) |> count(attrition) |>  mutate(stroke_ratio = 100*n/sum(n)) |>
+ggplot(aes(x = factor(cat_ttlyears,levels = c("Muy bajo","Bajo","Medio","Alto","Muy alto")), y = stroke_ratio, fill = attrition))+
+geom_col()+
+annotate("text", x = 1, y= 35, label= paste(attr_5,"%", sep =""),size = 3 , color = "#A4185B",fontface = "bold") + 
+annotate("text", x = 2, y= 20, label= paste(attr_4,"%", sep =""),size = 3 , color = "#A4185B",fontface = "bold") + 
+annotate("text", x = 3, y= 20, label= paste(attr_3,"%", sep =""),size = 3 , color = "#A4185B",fontface = "bold") +  
+annotate("text", x = 4, y= 20, label= paste(attr_2,"%", sep =""),size = 3 , color = "#A4185B",fontface = "bold") +  
+annotate("text", x = 5, y= 20, label= paste(attr_1,"%", sep =""),size = 3 , color = "#A4185B",fontface = "bold") +  
+scale_fill_manual(values = c("#AAEAAA", "#A4185B"))+
+theme_minimal()+
+theme(plot.title = element_text(size = 20, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 10, angle = 90, face =  "bold"),
+      legend.position = "None"
+      )
+
+ggarrange(plot_dist_ttlyears, plot_cat_ttlyears, ncol=2)
+```
+
+La distribución del tiempo de entrenamiento por empleados nos indica que los empleados por lo general destinaron un tiempo medio y bajo al entrenamiento (**33.83% y 36.46%**).
+
+También podemos observar que el abandono laboral en función del tiempo de entrenamiento se mantiene constante en los diferentes niveles siendo mayor cuando se destina poco tiempo de entrenamiento (**15.06%**) y siendo el menor nivel cuando se destina un tiempo medio (**8.99%**)
+
+
+-   [**Variables *yearsatcompany y yearsincurrentrole***]{.hl-bluepastel}
+
+Las variables **yearsatcompany** y **yearsincurrentrole** se va a relacionar con la objetivo gracias al método de percentiles:
+
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+percentiles <- quantile(dataset_attrition$yearsatcompany, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE)
+
+attrition_cat_yacomp <- dataset_attrition |> 
+  mutate(cat_yacomp = case_when(
+    yearsatcompany <= percentiles[2] ~ "P0 - P25",
+    yearsatcompany <= percentiles[3] ~ "P25 - P50",
+    yearsatcompany <= percentiles[4] ~ "P50 - P75",
+    TRUE ~ "P75 - P100"
+  )) |> 
+  select(yearsatcompany, cat_yacomp, attrition) |> 
+  group_by(cat_yacomp) |> 
+  count(attrition) |>
+  mutate(attrition_ratio = 100 * n / sum(n),
+         cat_yacomp = factor(cat_yacomp, levels = c("P0 - P25", "P25 - P50", "P50 - P75", "P75 - P100"))
+  ) |> ungroup()
+
+attr_yacomp_1 <- round(min(attrition_cat_yacomp |> filter(cat_yacomp == "P0 - P25" & attrition == "1") |> select(attrition_ratio)), 2)
+attr_yacomp_2 <- round(min(attrition_cat_yacomp |> filter(cat_yacomp == "P25 - P50" & attrition == "1") |> select(attrition_ratio)), 2)
+attr_yacomp_3 <- round(min(attrition_cat_yacomp |> filter(cat_yacomp == "P50 - P75" & attrition == "1") |> select(attrition_ratio)), 2)
+attr_yacomp_4 <- round(min(attrition_cat_yacomp |> filter(cat_yacomp == "P75 - P100" & attrition == "1") |> select(attrition_ratio)), 2)
+
+plot_yacomp <- attrition_cat_yacomp |>
+  ggplot(aes(x = cat_yacomp, y = attrition_ratio, fill = attrition)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Years at company - employee attrition (%)")+
+  annotate("text", x = 1, y = 40, label= paste(attr_yacomp_1, "%", sep = ""), size = 3, color = "#A4185B", fontface = "bold") + 
+  annotate("text", x = 2, y = 40, label= paste(attr_yacomp_2, "%", sep = ""), size = 3, color = "#A4185B", fontface = "bold") + 
+  annotate("text", x = 3, y = 40, label= paste(attr_yacomp_3, "%", sep = ""), size = 3, color = "#A4185B", fontface = "bold") + 
+  annotate("text", x = 4, y = 40, label= paste(attr_yacomp_4, "%", sep = ""), size = 3, color = "#A4185B", fontface = "bold") + 
+  scale_fill_manual(values = c("#AAEAAA", "#A4185B")) +
+  theme_minimal() +
+  theme(axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.y = element_text(size = 8, face = "bold"),
+        legend.position = "None",
+        plot.title = element_text(size = 8, face = "bold"))
+
+percentiles <- quantile(dataset_attrition$yearsincurrentrole, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE)
+
+attrition_cat_ycrol <- dataset_attrition |> 
+  mutate(cat_ycrol = case_when(
+    yearsincurrentrole <= percentiles[2] ~ "P0 - P25",
+    yearsincurrentrole <= percentiles[3] ~ "P25 - P50",
+    yearsincurrentrole <= percentiles[4] ~ "P50 - P75",
+    TRUE ~ "P75 - P100"
+  )) |> 
+  select(yearsincurrentrole, cat_ycrol, attrition) |> 
+  group_by(cat_ycrol) |> 
+  count(attrition) |>
+  mutate(attrition_ratio = 100 * n / sum(n),
+         cat_ycrol = factor(cat_ycrol, levels = c("P0 - P25", "P25 - P50", "P50 - P75", "P75 - P100"))
+  ) |> ungroup()
+
+attr_ycrol_1 <- round(min(attrition_cat_ycrol |> filter(cat_ycrol == "P0 - P25" & attrition == "1") |> select(attrition_ratio)), 2)
+attr_ycrol_2 <- round(min(attrition_cat_ycrol |> filter(cat_ycrol == "P25 - P50" & attrition == "1") |> select(attrition_ratio)), 2)
+attr_ycrol_3 <- round(min(attrition_cat_ycrol |> filter(cat_ycrol == "P50 - P75" & attrition == "1") |> select(attrition_ratio)), 2)
+attr_ycrol_4 <- round(min(attrition_cat_ycrol |> filter(cat_ycrol == "P75 - P100" & attrition == "1") |> select(attrition_ratio)), 2)
+
+plot_years_crol <- attrition_cat_ycrol |>
+  ggplot(aes(x = cat_ycrol, y = attrition_ratio, fill = attrition)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Years in current role - employee attrition (%)")+
+  annotate("text", x = 1, y = 40, label= paste(attr_ycrol_1, "%", sep = ""), size = 3, color = "#A4185B", fontface = "bold") + 
+  annotate("text", x = 2, y = 40, label= paste(attr_ycrol_2, "%", sep = ""), size = 3, color = "#A4185B", fontface = "bold") + 
+  annotate("text", x = 3, y = 40, label= paste(attr_ycrol_3, "%", sep = ""), size = 3, color = "#A4185B", fontface = "bold") + 
+  annotate("text", x = 4, y = 40, label= paste(attr_ycrol_4, "%", sep = ""), size = 3, color = "#A4185B", fontface = "bold") + 
+  scale_fill_manual(values = c("#AAEAAA", "#A4185B")) +
+  theme_minimal() +
+  theme(axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.y = element_text(size = 8, face = "bold"),
+        legend.position = "None",
+        plot.title = element_text(size = 8, face = "bold"))
+
+
+ggarrange(plot_yacomp, plot_years_crol, ncol=2)
+```
+
+Observamos como las gráficas son bastante similares en cuanto a su tendencia descendente en función del paso de los años.
+
+Los empleados que llevan menos tiempo en la compañía son los que tienen una mayor tasa de abandono laboral (**23.01%**), además se observa como en función del paso de los años esta tasa desciende hasta un **2.46%**.
+
+Por otro lado los empleados que menos tiempo llevan con un manager son los que más abandonan el trabajo con un **19.27%** y esta tasa desciende a lo largo de los años a pesar de un pequeño incremento en el percentil 50-75 hasta el **2.3%** final
+
+
+-   [**Variable *yearssincelastpromotion y yearswithcurrmanager***]{.hl-bluepastel}
+
+Tambien las variables **yearssincelastpromotion** y **yearswithcurrmanager** se van a seguir relacionando con la variable objetivo mediante percentiles:
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+percentiles <- quantile(dataset_attrition$yearsincurrentrole, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE)
+
+attrition_cat_ycrol <- dataset_attrition |> 
+  mutate(cat_ycrol = case_when(
+    yearsincurrentrole <= percentiles[2] ~ "P0 - P25",
+    yearsincurrentrole <= percentiles[3] ~ "P25 - P50",
+    yearsincurrentrole <= percentiles[4] ~ "P50 - P75",
+    TRUE ~ "P75 - P100"
+  )) |> 
+  select(yearsincurrentrole, cat_ycrol, attrition) |> 
+  group_by(cat_ycrol) |> 
+  count(attrition) |>
+  mutate(attrition_ratio = 100 * n / sum(n),
+         cat_ycrol = factor(cat_ycrol, levels = c("P0 - P25", "P25 - P50", "P50 - P75", "P75 - P100"))
+  ) |> ungroup()
+
+attr_ycrol_1 <- round(min(attrition_cat_ycrol |> filter(cat_ycrol == "P0 - P25" & attrition == "1") |> select(attrition_ratio)), 2)
+attr_ycrol_2 <- round(min(attrition_cat_ycrol |> filter(cat_ycrol == "P25 - P50" & attrition == "1") |> select(attrition_ratio)), 2)
+attr_ycrol_3 <- round(min(attrition_cat_ycrol |> filter(cat_ycrol == "P50 - P75" & attrition == "1") |> select(attrition_ratio)), 2)
+attr_ycrol_4 <- round(min(attrition_cat_ycrol |> filter(cat_ycrol == "P75 - P100" & attrition == "1") |> select(attrition_ratio)), 2)
+
+plot_cat_ycrol <- attrition_cat_ycrol |>
+  ggplot(aes(x = cat_ycrol, y = attrition_ratio, fill = attrition)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Years in current role - employee attrition (%)")+
+  annotate("text", x = 1, y = 40, label= paste(attr_ycrol_1, "%", sep = ""), size = 3, color = "#A4185B", fontface = "bold") + 
+  annotate("text", x = 2, y = 40, label= paste(attr_ycrol_2, "%", sep = ""), size = 3, color = "#A4185B", fontface = "bold") + 
+  annotate("text", x = 3, y = 40, label= paste(attr_ycrol_3, "%", sep = ""), size = 3, color = "#A4185B", fontface = "bold") + 
+  annotate("text", x = 4, y = 40, label= paste(attr_ycrol_4, "%", sep = ""), size = 3, color = "#A4185B", fontface = "bold") + 
+  scale_fill_manual(values = c("#AAEAAA", "#A4185B")) +
+  theme_minimal() +
+  theme(axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.y = element_text(size = 8, face = "bold"),
+        legend.position = "None",
+        plot.title = element_text(size = 8, face = "bold"))
+
+percentiles <- quantile(dataset_attrition$yearswithcurrmanager, probs = c(0, 0.25, 0.5, 0.75, 1), na.rm = TRUE)
+
+attrition_cat_ycrmang <- dataset_attrition |> 
+  mutate(cat_ycrmang  = case_when(
+    yearswithcurrmanager <= percentiles[2] ~ "P0 - P25",
+    yearswithcurrmanager <= percentiles[3] ~ "P25 - P50",
+    yearswithcurrmanager <= percentiles[4] ~ "P50 - P75",
+    TRUE ~ "P75 - P100"
+  )) |> 
+  select(yearswithcurrmanager, cat_ycrmang, attrition) |> 
+  group_by(cat_ycrmang) |> 
+  count(attrition) |>
+  mutate(attrition_ratio = 100 * n / sum(n),
+         cat_ycrmang = factor(cat_ycrmang, levels = c("P0 - P25", "P25 - P50", "P50 - P75", "P75 - P100"))
+  ) |> ungroup()
+
+attr_ycrmang_1 <- round(min(attrition_cat_ycrmang |> filter(cat_ycrmang == "P0 - P25" & attrition == "1") |> select(attrition_ratio)), 2)
+attr_ycrmang_2 <- round(min(attrition_cat_ycrmang |> filter(cat_ycrmang == "P25 - P50" & attrition == "1") |> select(attrition_ratio)), 2)
+attr_ycrmang_3 <- round(min(attrition_cat_ycrmang |> filter(cat_ycrmang == "P50 - P75" & attrition == "1") |> select(attrition_ratio)), 2)
+attr_ycrmang_4 <- round(min(attrition_cat_ycrmang |> filter(cat_ycrmang == "P75 - P100" & attrition == "1") |> select(attrition_ratio)), 2)
+
+plot_cat_ycrmang <- attrition_cat_ycrol |>
+  ggplot(aes(x = cat_ycrol, y = attrition_ratio, fill = attrition)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Years with current manager - employee attrition (%)")+
+  annotate("text", x = 1, y = 40, label= paste(attr_ycrmang_1, "%", sep = ""), size = 3, color = "#A4185B", fontface = "bold") + 
+  annotate("text", x = 2, y = 40, label= paste(attr_ycrmang_2, "%", sep = ""), size = 3, color = "#A4185B", fontface = "bold") + 
+  annotate("text", x = 3, y = 40, label= paste(attr_ycrmang_3, "%", sep = ""), size = 3, color = "#A4185B", fontface = "bold") + 
+  annotate("text", x = 4, y = 40, label= paste(attr_ycrmang_4, "%", sep = ""), size = 3, color = "#A4185B", fontface = "bold") + 
+  scale_fill_manual(values = c("#AAEAAA", "#A4185B")) +
+  theme_minimal() +
+  theme(axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.y = element_text(size = 8, face = "bold"),
+        legend.position = "None",
+        plot.title = element_text(size = 8, face = "bold"))
+
+ggarrange(plot_cat_ycrol, plot_cat_ycrmang, ncol=2)
+```
+
+Se ve como la tasa de abandono se mantiene descendente a lo largo de los años. Los empleados que menos tiempo llevan en su rol o con su manager concreto son los que mas tendencia tienen a abandonar el empleo con un **19.27% y 18.49%** respectivamente.
+
+Esta desciende notablemente hasta un **2.3%** en caso de los años en un rol y hasta un **4.15%** en los años con un manager concreto.
+
+Con todas estas observaciones se puede deducir que existe una tendencia entre la gente más joven y que menos años lleva en el trabajo a abandonar ese empleo.
+
+##### Contraste de independencia
+
+Se va a realizar la prueba $\chi^{2}$ de independencia para comprobar con mayor certeza si la variable predictora es dependiente o no de la variable objetivo.
+
+Este tipo de prueba se realiza sobre dos variables categóricas para comprobar si están o no relacionadas.
+
+Vamos a ejecutar esta prueba sobre todas nuestras variables que pueden o son ya categóricas, por ello en primer lugar se van a convertir algunas variables a categóricas.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+dataset_attrition$educationfield = as.factor(dataset_attrition$educationfield)
+
+dataset_attrition$gender = as.factor(dataset_attrition$gender)
+
+dataset_attrition$jobrole = as.factor(dataset_attrition$jobrole)
+
+dataset_attrition$maritalstatus = as.factor(dataset_attrition$maritalstatus)
+```
+
+Una vez convertidas las variables a categóricas se van a enfrentar todas nuestras variables categóricas con la variable objetivo:
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+cat <- c('businesstravel','department','education','educationfield','gender','joblevel','jobrole','maritalstatus','overtime','shift')
+
+chi <- tibble("variable" = cat, "p_value" = dataset_attrition |> select(cat) |> map_dbl(.f = function(x) { chisq.test(dataset_attrition$attrition, x)$p.value }))
+
+chi |> arrange(desc(p_value))
+
+chi |> filter(p_value > 0.05)
+```
+
+
+Filtrando por las variables que tienen una menor asociación significativa con la variable objetivo observamos que las variables **gender**, **educationfield** y **businesstravel** no parecen afectar significativamente al abandono del empleo, por lo tanto estas se van a eliminar de nuestro conjunto de datos.
+
+Se va a conservar la variable **education** ya que es muy cercana a nuestro nivel de significación habitual (0.05).
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+dataset_attrition = select(dataset_attrition, -gender)
+
+dataset_attrition = select(dataset_attrition, -educationfield)
+
+dataset_attrition = select(dataset_attrition, -businesstravel)
+```
+
+
+#### Tratamiento de outliers
+
+Se va a realizar el tratamiento de los outliers en las variables que tienen estos valores extremos.
+
+En alusión a los gráficos obtenidos en el análisis exploratorio de las variables podemos obervar que todas las distribuciones son asimétricas a excepción de la de la variable **trainingtimeslastyear**.
+
+Además comprobando los valores de las medianas, las siguientes variables tienen un valor distinto de 0:
+
+
+```{r}
+median(dataset_attrition$totalworkingyears, na.rm=TRUE)
+```
+
+```{r}
+median(dataset_attrition$yearsatcompany, na.rm=TRUE)
+```
+
+```{r}
+median(dataset_attrition$yearsincurrentrole, na.rm=TRUE)
+```
+
+```{r}
+median(dataset_attrition$yearssincelastpromotion, na.rm=TRUE)
+```
+
+```{r}
+median(dataset_attrition$yearswithcurrmanager, na.rm=TRUE)
+```
+
+```{r}
+median(dataset_attrition$monthlyincome, na.rm=TRUE)
+```
+
+```{r}
+median(dataset_attrition$numcompaniesworked, na.rm=TRUE)
+```
+Respecto a la mediana asignaremos **K = 3** inicialmente. Por tanto un dato atípico en nuestro análisis será aquel que se aleje 3 veces de la mediana de las desviaciones absolutas. 
+
+Por otro lado, en la distribución más simétrica de datos, en el **trainingtimeslastyear**, se va a realizar la imputación por la media. En este caso asignaremos **K = 2** aunque el valor más habitual sea 2.5 pero siendo menos restrictivos para detectar esos valores outlier que nos representa la gráfica previa.
+
+Por cada una de las variables habrá una variable outlier respectiva que contendrá 0 o 1 en función de si es o no outlier.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+k <- 3
+k_mean <- 2
+
+dataset_attrition <- dataset_attrition |> 
+  mutate(outlier_twyears = if_else(abs(scores(totalworkingyears, type = "mad")) > k, 1, 0),
+        outlier_yacompany = if_else(abs(scores(yearsatcompany, type = "mad")) > k, 1, 0),
+        outlier_yicrole = if_else(abs(scores(yearsincurrentrole, type = "mad")) > k, 1, 0),
+        outlier_yprom = if_else(abs(scores(yearssincelastpromotion, type = "mad")) > k, 1, 0),
+        outlier_ywcmag = if_else(abs(scores(yearswithcurrmanager, type = "mad")) > k, 1, 0),
+        outlier_minc = if_else(abs(scores(monthlyincome, type = "mad")) > k, 1, 0),
+        outlier_ncwork = if_else(abs(scores(numcompaniesworked, type = "mad")) > k, 1, 0),
+        outlier_ttlyear = if_else(abs(scores(trainingtimeslastyear, type = "z")) > k_mean, 1, 0))
+
+datatable(dataset_attrition |> select(employeeid, outlier_twyears, outlier_yacompany,
+                                      outlier_yicrole, outlier_yprom, outlier_ywcmag,
+                                      outlier_minc, outlier_ncwork, outlier_ttlyear), 
+          rownames = FALSE, 
+          filter = "top",
+          options = list(pageLength = 10)) |> formatStyle(names(dataset_attrition |>
+          select(employeeid, outlier_twyears, outlier_yacompany, outlier_yicrole, outlier_yprom,
+                 outlier_ywcmag, outlier_minc, outlier_ncwork, outlier_ttlyear)), 
+          lineHeight = "65%")
+```
+
+El **número total de outliers** en el conjunto de datos es:
+
+```{r}
+dataset_attrition |> filter(outlier_twyears == 1 | outlier_yacompany == 1 | outlier_yicrole == 1 | outlier_yprom == 1 | outlier_ywcmag == 1 | outlier_minc == 1 | outlier_ncwork == 1 | outlier_ttlyear == 1) |> distinct() |> count()
+```
+
+Para la imputación de outliers se va a realizar una **winzorización** en todas las variables que tenían estos valores extremos:
+
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+max_twyears_not_outlier <- max(dataset_attrition |> filter(outlier_twyears == 0) |> select(totalworkingyears))
+
+max_yacompany_not_outlier <- max(dataset_attrition |> filter(outlier_yacompany == 0) |> select(yearsatcompany))
+
+max_yicrole_not_outlier <- max(dataset_attrition |> filter(outlier_yicrole == 0) |> select(yearsincurrentrole))
+
+max_yprom_not_outlier <- max(dataset_attrition |> filter(outlier_yprom == 0) |> select(yearssincelastpromotion))
+
+max_ywcmag_not_outlier <- max(dataset_attrition |> filter(outlier_ywcmag == 0) |> select(yearswithcurrmanager))
+
+max_minc_not_outlier <- max(dataset_attrition |> filter(outlier_minc == 0) |> select(monthlyincome))
+
+max_ncwork_not_outlier <- max(dataset_attrition |> filter(outlier_ncwork == 0) |> select(numcompaniesworked))
+
+max_ttlyear_not_outlier <- max(dataset_attrition |> filter(outlier_ttlyear == 0) |> select(trainingtimeslastyear))
+
+dataset_attrition <- dataset_attrition |> mutate(
+                            totalworkingyears = ifelse(outlier_twyears == 1,
+                                                      max_twyears_not_outlier,totalworkingyears),
+                            yearsatcompany = ifelse(outlier_yacompany == 1, 
+                                         max_yacompany_not_outlier, yearsatcompany ),
+                            yearsincurrentrole = ifelse(outlier_yicrole == 1, 
+                                         max_yicrole_not_outlier, yearsincurrentrole ),
+                            yearssincelastpromotion = ifelse(outlier_yprom == 1, 
+                                         max_yprom_not_outlier, yearssincelastpromotion ),
+                            yearswithcurrmanager = ifelse(outlier_ywcmag == 1, 
+                                         max_ywcmag_not_outlier, yearswithcurrmanager ),
+                            monthlyincome = ifelse(outlier_minc == 1, 
+                                         max_minc_not_outlier, monthlyincome ),
+                            numcompaniesworked = ifelse(outlier_ncwork == 1, 
+                                         max_ncwork_not_outlier, numcompaniesworked ),
+                            trainingtimeslastyear = ifelse(outlier_ttlyear == 1, 
+                                         max_ttlyear_not_outlier, trainingtimeslastyear ),) |>
+select(-c(outlier_twyears,outlier_yacompany,outlier_yicrole,outlier_yprom,outlier_ywcmag, outlier_minc,outlier_ttlyear,outlier_ncwork))
+
+datatable(dataset_attrition)
+```
+
+
+
