@@ -478,7 +478,6 @@ ggplot(data = student_data_ratio_pr_ed, aes(x=student_ratio, y=fct_rev(reorder(r
 knitr::include_graphics("./img/ejercicio8.jpg")
 ```
 
-
 Para completar este ejercicio se ha mantenido el código del anterior y además se ha añadido la funcion geom_point para pintar los puntos que representan los valores del Ratio estudiante/profesor en los diferentes continentes.
 
 ```{r}
@@ -492,7 +491,6 @@ ggplot(data = student_data_ratio_pr_ed, aes(x=student_ratio, y=fct_rev(reorder(r
   scale_x_continuous(breaks = seq(10,80,10)) +
   labs(title = "GRÁFICOS BOXPLOT CON DATOS", x="Ratio estudiante/profesor en educación primaria", y="Continent", caption="Datos: UNESCO Institute for Statistics")
 ```
-
 
 ### Ejercicio 9
 
@@ -526,7 +524,6 @@ ggplot(data = student_data_ratio_pr_ed, aes(x=student_ratio, y=fct_rev(reorder(r
 knitr::include_graphics("./img/ejercicio10.jpg")
 ```
 
-
 Como medida de centralidad se ha elegido la media para este gráfico. Para representar los puntos dispersos se mantiene el geom_jitter, pero como partes nuevas se ha añadido el geom_vline que nos permite pintar la línea que establece la media general entre todos los datos y stat_summary que pinta con un punto grande la media por continente del ratio estudiante/profesor en primaria
 
 ```{r}
@@ -545,5 +542,3 @@ ggplot(data = student_data_ratio_pr_ed, aes(x=student_ratio, y=fct_rev(reorder(r
   scale_x_continuous(breaks = seq(10,80,10)) +
   labs(title = "GRÁFICOS JITTER", subtitle='Línea vertical: Media general. Puntos grandes: Medias por continentes', x="Ratio estudiante/profesor en educación primaria", y="Continente", caption="Datos: UNESCO Institute for Statistics")
 ```
-
-

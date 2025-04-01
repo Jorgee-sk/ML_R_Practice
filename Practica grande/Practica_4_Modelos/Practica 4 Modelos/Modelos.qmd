@@ -104,8 +104,7 @@ library(ggthemes)
 
 ```
 
-
-## Datos
+## Preparación de los datos
 
 En primer lugar vamos a **importar el dataset** con el que se va a trabajar.
 
@@ -118,7 +117,6 @@ dataset_attrition <- read.csv(file = "./data/watson_healthcare_modified.csv")
 ```
 
 Además vamos a convertir la variable objetivo, que en nuestro caso es **Attrition** a tipo factor donde podrá obtener los valores **No** y **Yes**. Por otro lado se va a realizar una transformación de tal forma que la variable quede representada con valores 1-Yes y 0-No y se mantenga como categórica.
-
 
 ```{r}
 #| code-fold: true
@@ -137,8 +135,6 @@ dataset_attrition$Attrition <- as.factor(dataset_attrition$Attrition)
 
 ```
 
-
-
 También es importante **estandarizar los nombres de las variables de nuestro dataset**. En general se puede ver que el dataset viene bastante bien preparado ya que no contiene espacios pero si que tiene [UpperCamelCase](https://wiki.c2.com/?PascalCase) por lo que deberemos convertir las variables a minúsculas.
 
 ```{r}
@@ -154,7 +150,7 @@ names(dataset_attrition) <- str_to_lower(names(dataset_attrition))
 
 ### Variable objetivo
 
-Es muy importante conocer la distribución de la variable objetivo para diseñar estrategias de modelado adecuadas, garantizar un entrenamiento justo y obtener métricas confiables. 
+Es muy importante conocer la distribución de la variable objetivo para diseñar estrategias de modelado adecuadas, garantizar un entrenamiento justo y obtener métricas confiables.
 
 Con esta visualización de la variable objetivo podremos detectar posibles desbalanceos de nuestro conjunto de datos que nos permitirán crear estrategias para poder suplir estos problemas a la hora de crear los modelos y entrenarlos.
 
@@ -178,7 +174,8 @@ theme(plot.title = element_text(size = 20, face = "bold"),
       legend.position = "None")
 
 ```
-Como podemos observar nuestra variable objetivo **Attrition** tiene un 88.13% - 11.87% entre los dos valores que puede obtener, lo que nos indica que es una variable que está muy desbalanceada. A la hora de entrenar los modelos, esto va a tener repercusiones negativas haciendo que no haya buenas predicciones de cuando un empleado vaya a abandonar la empresa. 
+
+Como podemos observar nuestra variable objetivo **Attrition** tiene un 88.13% - 11.87% entre los dos valores que puede obtener, lo que nos indica que es una variable que está muy desbalanceada. A la hora de entrenar los modelos, esto va a tener repercusiones negativas haciendo que no haya buenas predicciones de cuando un empleado vaya a abandonar la empresa.
 
 Para solucionar este problema se buscará una técnica tras realizar el análisis del resto de los datos para compensar esta falta de datos en el **1-Yes** de la variable objetivo.
 
@@ -190,7 +187,6 @@ Para llevar a cabo este análisis en primer lugar vamos a visualizar un resumen 
 dataset_attrition |> skim()
 ```
 
-
 En esta primera visualización de los datos no se obtiene ningún tipo de dato nulo por lo que no habrá que hacer ningún tipo de conversion de datos.
 
 #### Analisis de variables
@@ -198,7 +194,6 @@ En esta primera visualización de los datos no se obtiene ningún tipo de dato n
 -   [**Variable *over18***]{.hl-bluepastel}
 
 En primer lugar podemos ver que existe una variable denominada **over18** que indica si el trabajador tiene más de 18 años o no. Esta variable normalmente sería dicotómica por su propia definición pero podemos observar que solo tiene un valor.
-
 
 ```{r}
 #| code-fold: true
@@ -218,7 +213,6 @@ theme(plot.title = element_text(size = 20, face = "bold"),
       legend.position = "None")
 ```
 
-
 Por lo que podemos deducir que es una variable que no aporta valor predictivo ni analítico y por tanto se puede eliminar de nuestro dataset.
 
 ```{r}
@@ -233,7 +227,6 @@ dataset_attrition = select(dataset_attrition, -over18)
 
 Esta variable representa el número de empleados por fila dentro del dataset, es una variable redundante ya que por fila solo habrá un empleado dentro de nuestros datos y por tanto no nos aporta ningún tipo de información por lo que puede ser eliminada.
 
-
 ```{r}
 #| code-fold: true
 #| message: false
@@ -244,8 +237,7 @@ dataset_attrition = select(dataset_attrition, -employeecount)
 
 -   [**Variable *standardhours***]{.hl-bluepastel}
 
-Esta variable representa el número de horas que trabaja un empleado cada dos semanas. Es un valor constante para todos los empleados por lo que al igual que en los dos casos anteriores, no aporta valor ni predictivo ni analítico y se puede eliminar. 
-
+Esta variable representa el número de horas que trabaja un empleado cada dos semanas. Es un valor constante para todos los empleados por lo que al igual que en los dos casos anteriores, no aporta valor ni predictivo ni analítico y se puede eliminar.
 
 ```{r}
 #| code-fold: true
@@ -255,10 +247,9 @@ Esta variable representa el número de horas que trabaja un empleado cada dos se
 dataset_attrition = select(dataset_attrition, -standardhours)
 ```
 
-
 -   [**Variable *overtime***]{.hl-bluepastel}
 
-La variable denominada **overtime** indica si el empleado ha trabajado horas extras o no. Inicialmente la variable es de tipo char con dos valores diferentes que son **Yes** y **No**, por lo que se trata de una variable dicotómica. 
+La variable denominada **overtime** indica si el empleado ha trabajado horas extras o no. Inicialmente la variable es de tipo char con dos valores diferentes que son **Yes** y **No**, por lo que se trata de una variable dicotómica.
 
 ```{r}
 #| code-fold: true
@@ -347,10 +338,10 @@ theme(axis.title.y = element_blank(),
 
 
 ```
+
 Se puede apreciar que la variable **Single** no tiene un porcentaje parecido a la de **Divorced** por lo que es mejor mantener separadas estas variables ya que aportan una información diferente.
 
 La mayor tasa de abandono del trabajo en función del estado civil se da cuando el empleado está soltero sin haberse casado anteriormente.
-
 
 -   [**Variable *jobrole***]{.hl-bluepastel}
 
@@ -402,9 +393,7 @@ theme(plot.title = element_text(size = 20, face = "bold"),
 
 Como observamos en el gráfico nuestras dos categorías muestran un **salario medio similar** por lo que vamos a seguir con el análisis.
 
-
 En este caso lo que vamos a hacer es estudiar si se mantienen similares los porcentajes de los departamentos o campos en los que el empleado trabaja dependiendo de si su rol es **Admin** o **Administrative**
-
 
 ```{r}
 #| code-fold: true
@@ -454,7 +443,6 @@ Con estos gráficos podemos observar que los porcentajes de **Admin** y **Admini
 dataset_attrition <- dataset_attrition |> mutate(jobrole = ifelse(jobrole == "Admin","Administrative", jobrole))
 ```
 
-
 ```{r}
 #| code-fold: true
 #| message: false
@@ -503,7 +491,6 @@ Observando las diferentes categorías podemos deducir que se pueden simplificar 
 dataset_attrition <- dataset_attrition |> mutate(businesstravel = ifelse(businesstravel == "Non-Travel",0,1))
 ```
 
-
 Por tanto obtendremos la variable **businesstravel** con dos valores posibles, **0** cuando no viaje y **1** cuando el empleado viaje.
 
 ```{r}
@@ -525,6 +512,7 @@ theme(plot.title = element_text(size = 15, face = "bold"),
       axis.text.x = element_text(size = 12, face = "bold"),
       legend.position = "None")
 ```
+
 -   [**Variable *educationfield***]{.hl-bluepastel}
 
 Esta variable representa el campo en el que se ha formado el empleado. Inicialmente existen diferentes categorías **Human Resources**, **Marketing**, **Life Sciences**, **Medical**, **Technical Degree** y **Other**.
@@ -554,7 +542,6 @@ Por ejemplo, las personas formadas en **Recursos Humanos** y **Marketing**, comp
 
 Ocurre lo mismo con las categorías **Medical** y **Life Sciences**. Estas pueden juntarse en una sola categoría ya que a pesar de la amplitud del campo de la medicina, esta sigue siendo parte de las ciencias biológicas.
 
-
 ```{r}
 #| code-fold: true
 #| message: false
@@ -568,7 +555,6 @@ dataset_attrition <- dataset_attrition |>
     TRUE ~ educationfield # Mantener el resto como están (other)
   ))
 ```
-
 
 ```{r}
 #| code-fold: true
@@ -586,7 +572,6 @@ theme(plot.title = element_text(size = 16, face = "bold"),
       axis.text.x = element_text(size = 10, face = "bold"),
       legend.position = "None")
 ```
-
 
 Por último se van a analizar las variables restantes de tipo character [***gender y department***]{.hl-bluepastel}
 
@@ -720,6 +705,7 @@ dataset_attrition |> ggplot( aes(x=as.factor(1), y=age, fill = "#023047" )) +
                     plot.title = element_text(size = 20, face = "bold")
                     )
 ```
+
 Podemos observar que no existen outliers por lo que no se hará un tratamiento especial de la variable **age**.
 
 -   [**Variables *yearsatcompany*, *yearsincurrentrole*, *yearssincelastpromotion* y *yearswithcurrmanager***]{.hl-bluepastel}
@@ -796,8 +782,8 @@ gg_yearswithcurrmanager <- dataset_attrition |> ggplot( aes(x=as.factor(1), y=ye
 ggarrange(gg_yearsatcompany,gg_yearsincurrentrole,gg_yearssincelastpromotion,gg_yearswithcurrmanager, ncol=2, nrow = 2, common.legend = TRUE, legend = "none")
 
 ```
-Observando todas las gráficas vemos como todas las variables tienen una **distribución asimétrica** con presencia de outliers que se van a tratar posteriormente.
 
+Observando todas las gráficas vemos como todas las variables tienen una **distribución asimétrica** con presencia de outliers que se van a tratar posteriormente.
 
 -   [**Variable *distancefromhome***]{.hl-bluepastel}
 
@@ -823,14 +809,11 @@ dataset_attrition |> ggplot( aes(x=as.factor(1), y=distancefromhome, fill = "#02
                     )
 ```
 
-
 Se observa en la gráfica de distribución de **distancefromhome** como existe asimetría en la distribución de la variable. A pesar de esta asimetría, no existen outliers por lo que no se deberá hacer un tratamiento especial de esta variable.
-
 
 -   [**Variable *monthlyincome***]{.hl-bluepastel}
 
 La variable **monthlyincome** es una variable numérica que representa el sueldo mensual de cada empleado.
-
 
 ```{r}
 #| code-fold: true
@@ -858,7 +841,6 @@ Observamos que existen outliers en esta variable así como asimetría de su dist
 
 La variable **numcompaniesworked** es una variable numérica que representa el número de compañías en las que ha trabajado un empleado.
 
-
 ```{r}
 dataset_attrition |> ggplot( aes(x=as.factor(1), y=numcompaniesworked, fill = "#023047" )) +
               geom_violin(width = 1) +
@@ -874,7 +856,8 @@ dataset_attrition |> ggplot( aes(x=as.factor(1), y=numcompaniesworked, fill = "#
                     plot.title = element_text(size = 20, face = "bold")
                     )
 ```
-Con la distribución de la variable **numcompaniesworked** podemos detectar que hay asimetría y que además existen ciertos valores outlier. 
+
+Con la distribución de la variable **numcompaniesworked** podemos detectar que hay asimetría y que además existen ciertos valores outlier.
 
 -   [**Variable *percentsalaryhike***]{.hl-bluepastel}
 
@@ -895,8 +878,8 @@ dataset_attrition |> ggplot( aes(x=as.factor(1), y=percentsalaryhike, fill = "#0
                     plot.title = element_text(size = 20, face = "bold")
                     )
 ```
-Observamos asimetría en los datos, pero en este caso no detectamos outliers por lo que no se hará un tratamiento especial de la variable **percentsalaryhike**
 
+Observamos asimetría en los datos, pero en este caso no detectamos outliers por lo que no se hará un tratamiento especial de la variable **percentsalaryhike**
 
 -   [**Variables *totalworkingyears* y *trainingtimeslastyear***]{.hl-bluepastel}
 
@@ -939,10 +922,10 @@ gg_trainingtimeslastyear <- dataset_attrition |> ggplot( aes(x=as.factor(1), y=t
 
 ggarrange(gg_totalworkingyears,gg_trainingtimeslastyear, ncol=2, common.legend = TRUE, legend = "none")
 ```
-Con esta gráfica podemos deducir que la distribución de **totalworkingyears** presenta asimetría y valores outliers. 
+
+Con esta gráfica podemos deducir que la distribución de **totalworkingyears** presenta asimetría y valores outliers.
 
 Por otro lado la distribución de **trainingtimelastyear** es simétrica aunque observamos que los valores bajos tienen mucha mayor variabilidad respecto a la mediana. En esta gráfica también encontramos ciertos valores outliers por lo que se deberá hacer un tratamiento de esta variable de la misma forma que de **totalworkingyears**.
-
 
 #### Relación de variables con la variable objetivo
 
@@ -978,7 +961,6 @@ theme(axis.title.y = element_blank(),
 ```
 
 Podemos observar como existe una mayor tasa de abandono laboral por parte de las mujeres (la tasa en mujeres supone un 12.01% de diferencia respecto a los hombres).
-
 
 Otro aspecto interesante a observar en función de nuestra variable objetivo puede ser el departamento. Así se podrá conocer el departamento en el que más abandono laboral se produce dentro de la empresa.
 
@@ -1017,8 +999,8 @@ theme(axis.title.y = element_blank(),
       plot.title = element_text(size = 12, face = "bold")
       )
 ```
-Existe un mayor abandono laboral en los empleados que realizan viajes (12,17%) que en los que no realizan ningún tipo de viaje (9.3%)
 
+Existe un mayor abandono laboral en los empleados que realizan viajes (12,17%) que en los que no realizan ningún tipo de viaje (9.3%)
 
 -   [**Variable *department***]{.hl-bluepastel}
 
@@ -1029,8 +1011,6 @@ En este punto convertiremos ya la variable **department** a categórica.
 ```{r}
 dataset_attrition$department <- as.factor(dataset_attrition$department)
 ```
-
-
 
 ```{r}
 #| code-fold: true
@@ -1060,11 +1040,10 @@ theme(axis.title.y = element_blank(),
       plot.title = element_text(size = 12, face = "bold")
       )
 ```
+
 El departamento en el que más abandono laboral se produce es el de **cardiología** y en el que menos con bastante diferencia es el de **neurología**. Por lo que interpretando estos datos, podría haber peores condiciones laborales en el departamento de cardiología.
 
 Por último, respecto a las variables que originalmente eran de tipo character, se va a observar también la relación de la variable objetivo con la variable **overtime**
-
-
 
 -   [**Variable *educationfield, jobrole y maritalstatus***]{.hl-bluepastel}
 
@@ -1106,9 +1085,7 @@ theme(axis.title.y = element_blank(),
 
 ```
 
-
 En cuanto a la variable **educationfield** es destacable que los campos con más tasa de abandono laboral son las ciencias sociales y las ciencias tecnológicas.
-
 
 ```{r}
 #| code-fold: true
@@ -1144,7 +1121,6 @@ theme(axis.title.y = element_blank(),
 
 Por otro lado, en la variable **jobrole**, es muy destacable que los administrativos y terapeutas no tienen casi tasa de abandono laboral pero puestos como enfermera u otros tienen una muy alta tasa.
 
-
 ```{r}
 #| code-fold: true
 #| message: false
@@ -1176,7 +1152,6 @@ theme(axis.title.y = element_blank(),
 ```
 
 Podemos bservamos en la variable **maritalstatus** que las personas solteras son las que mayor tasa de abandono tienen (21.84%). Esto puede indicar que son personas que no necesitan tanta estabilidad laboral como personas que están casadas o divorciadas.
-
 
 -   [**Variable *overtime***]{.hl-bluepastel}
 
@@ -1210,8 +1185,8 @@ theme(axis.title.y = element_blank(),
       plot.title = element_text(size = 12, face = "bold")
       )
 ```
-Los empleados que trabajan horas extra tienen una tasa de abandono laboral que supone un 484% de diferencia respecto a los empleados que no realizan horas extra por lo que podemos ver que es un factor muy clave en el abandono laboral.
 
+Los empleados que trabajan horas extra tienen una tasa de abandono laboral que supone un 484% de diferencia respecto a los empleados que no realizan horas extra por lo que podemos ver que es un factor muy clave en el abandono laboral.
 
 -   [**Variable *age***]{.hl-bluepastel}
 
@@ -1260,7 +1235,6 @@ theme(axis.title.y = element_blank(),
 ```
 
 Se puede observar de forma clara como los empleados que van desde los **18 a 25 años** son los que tienen una mayor tasa de abandono laboral y con el paso de los años comienza a reducirse de manera considerable siendo la menor tasa de abandono desde los **45 años** hasta la edad máxima de nuestro conjunto de datos.
-
 
 -   [**Variable *distancefromhome***]{.hl-bluepastel}
 
@@ -1461,7 +1435,6 @@ En el **joblevel** podemos detectar como la gente que menos nivel tiene dentro d
 
 En cuanto a los turnos, es destacable que la gente que tiene su propia agenda **(0 - Employees with own schedule)** es la que tiene una mayor tasa de abandono labora, seguida eso sí, del turno de noche **(3 - 9pm to 7am)**
 
-
 -   [**Variable *monthlyincome***]{.hl-bluepastel}
 
 Para relacionar la variable objetivo con la variable **monthlyincome** se va a emplear la técnica de los percentiles.
@@ -1511,7 +1484,6 @@ attrition_cat_mincome |>
 ```
 
 Podemos observar que en el percentil **P0 - P25** (los empleados con los ingresos más bajos) existe la mayor tasa de abandono del empleo 27.45%. Y conforme van subiendo los sueldos esta tasa disminuye considerablemente hasta un 4.77%
-
 
 -   [**Variable *numcompaniesworked***]{.hl-bluepastel}
 
@@ -1612,7 +1584,6 @@ attrition_cat_pshike |>
 ```
 
 Se puede observar como existe una tasa de abandono laboral bastante similar en todos los niveles por lo que parece que la variable **percentsalaryhike** puede no estar aportando mucha información a nuestra variable objetivo. Para comprobar si realmente es útil posteriormente se realizará un contraste de independencia viendo si tiene sentido o no mantener esta variable.
-
 
 -   [**Variable *totalworkingyears***]{.hl-bluepastel}
 
@@ -1750,11 +1721,9 @@ La distribución del tiempo de entrenamiento por empleados nos indica que los em
 
 También podemos observar que el abandono laboral en función del tiempo de entrenamiento se mantiene constante en los diferentes niveles siendo mayor cuando se destina poco tiempo de entrenamiento (**15.06%**) y siendo el menor nivel cuando se destina un tiempo medio (**8.99%**)
 
-
 -   [**Variables *yearsatcompany y yearsincurrentrole***]{.hl-bluepastel}
 
 Las variables **yearsatcompany** y **yearsincurrentrole** se va a relacionar con la objetivo gracias al método de percentiles:
-
 
 ```{r}
 #| code-fold: true
@@ -1846,7 +1815,6 @@ Observamos como las gráficas son bastante similares en cuanto a su tendencia de
 Los empleados que llevan menos tiempo en la compañía son los que tienen una mayor tasa de abandono laboral (**23.01%**), además se observa como en función del paso de los años esta tasa desciende hasta un **2.46%**.
 
 Por otro lado los empleados que menos tiempo llevan con un manager son los que más abandonan el trabajo con un **19.27%** y esta tasa desciende a lo largo de los años a pesar de un pequeño incremento en el percentil 50-75 hasta el **2.3%** final
-
 
 -   [**Variable *yearssincelastpromotion y yearswithcurrmanager***]{.hl-bluepastel}
 
@@ -1980,7 +1948,6 @@ chi |> arrange(desc(p_value))
 chi |> filter(p_value > 0.05)
 ```
 
-
 Filtrando por las variables que tienen una menor asociación significativa con la variable objetivo observamos que las variables **gender**, **educationfield** y **businesstravel** no parecen afectar significativamente al abandono del empleo, por lo tanto estas se van a eliminar de nuestro conjunto de datos.
 
 Se va a conservar la variable **education** ya que es muy cercana a nuestro nivel de significación habitual (0.05).
@@ -1996,15 +1963,46 @@ dataset_attrition = select(dataset_attrition, -educationfield)
 dataset_attrition = select(dataset_attrition, -businesstravel)
 ```
 
-
 #### Tratamiento de outliers
 
-Se va a realizar el tratamiento de los outliers en las variables que tienen estos valores extremos.
+##### Detección de outliers
 
-En alusión a los gráficos obtenidos en el análisis exploratorio de las variables podemos obervar que todas las distribuciones son asimétricas a excepción de la de la variable **trainingtimeslastyear**.
+Gracias a los diferentes gráficos en el análisis de las variables se puede detectar que existen algunos valores extremos en nuestros datos. Para corregir esto, se va a realizar el tratamiento de los outliers en las variables que tienen estos valores.
 
-Además comprobando los valores de las medianas, las siguientes variables tienen un valor distinto de 0:
+Se ha podido observar que las variables que presentan valores atípicos son **totalworkingyears**, **yearsatcompany**, **yearsincurrentrole**, **yearssincelastpromotion**, **yearswithcurrmanager**, **monthlyincome**, **numcompaniesworked** y **trainingtimeslastyear**
 
+En alusión a los gráficos obtenidos en el análisis exploratorio de las variables podemos obervar que todas las distribuciones son asimétricas a excepción de la de la variable **trainingtimeslastyear** por lo que esta tendrá un tratamiento especial frente al resto.
+
+-   [**Variable *trainingtimeslastyear***]{.hl-bluepastel}
+
+Como se ha mencionado anteriormente, **trainingtimeslastyear** posee una distribución simétrica por lo que se va a realizar la imputación respecto a la media.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+k_mean <- 3
+
+dataset_attrition <- dataset_attrition |> 
+  mutate(outlier_ttlyear = if_else(abs(scores(trainingtimeslastyear, type = "z")) > k_mean, 1, 0))
+```
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+dataset_attrition |> filter(outlier_ttlyear == 1) |> distinct() |> count()
+```
+
+A pesar de encontrar outliers de forma gráfica, podemos observar que **respecto a la media** y estableciendo un valor de **K = 3**, no existen unos valores tan extremos como para ser considerados outliers por lo que no se realizará el tratamiento de esta variable.
+
+-   [**Variables *asimétricas***]{.hl-bluepastel}
+
+Para realizar el tratamiento de los outliers de estas variables asimétricas no se puede imputar por la media por lo que consideraremos realizarlo respecto a la mediana.
+
+Para poder realizar una detección de outliers respecto a la mediana primero nos tenemos que asegurar que las medianas de nuestras variables sean diferentes a 0 por lo que se van a realizar estos calculos a continuación:
 
 ```{r}
 median(dataset_attrition$totalworkingyears, na.rm=TRUE)
@@ -2033,9 +2031,10 @@ median(dataset_attrition$monthlyincome, na.rm=TRUE)
 ```{r}
 median(dataset_attrition$numcompaniesworked, na.rm=TRUE)
 ```
-Respecto a la mediana asignaremos **K = 3** inicialmente. Por tanto un dato atípico en nuestro análisis será aquel que se aleje 3 veces de la mediana de las desviaciones absolutas. 
 
-Por otro lado, en la distribución más simétrica de datos, en el **trainingtimeslastyear**, se va a realizar la imputación por la media. En este caso asignaremos **K = 2** aunque el valor más habitual sea 2.5 pero siendo menos restrictivos para detectar esos valores outlier que nos representa la gráfica previa.
+Observamos que ninguna de estas variables posee una mediana = 0 por lo que podemos continuar con nuestro proceso normalmente.
+
+Respecto a la mediana asignaremos **K = 3** inicialmente. Por tanto un dato atípico en nuestro análisis será aquel que se aleje 3 veces de la mediana de las desviaciones absolutas.
 
 Por cada una de las variables habrá una variable outlier respectiva que contendrá 0 o 1 en función de si es o no outlier.
 
@@ -2045,7 +2044,6 @@ Por cada una de las variables habrá una variable outlier respectiva que contend
 #| warning: false
 #| 
 k <- 3
-k_mean <- 2
 
 dataset_attrition <- dataset_attrition |> 
   mutate(outlier_twyears = if_else(abs(scores(totalworkingyears, type = "mad")) > k, 1, 0),
@@ -2054,28 +2052,213 @@ dataset_attrition <- dataset_attrition |>
         outlier_yprom = if_else(abs(scores(yearssincelastpromotion, type = "mad")) > k, 1, 0),
         outlier_ywcmag = if_else(abs(scores(yearswithcurrmanager, type = "mad")) > k, 1, 0),
         outlier_minc = if_else(abs(scores(monthlyincome, type = "mad")) > k, 1, 0),
-        outlier_ncwork = if_else(abs(scores(numcompaniesworked, type = "mad")) > k, 1, 0),
-        outlier_ttlyear = if_else(abs(scores(trainingtimeslastyear, type = "z")) > k_mean, 1, 0))
+        outlier_ncwork = if_else(abs(scores(numcompaniesworked, type = "mad")) > k, 1, 0))
 
 datatable(dataset_attrition |> select(employeeid, outlier_twyears, outlier_yacompany,
                                       outlier_yicrole, outlier_yprom, outlier_ywcmag,
-                                      outlier_minc, outlier_ncwork, outlier_ttlyear), 
+                                      outlier_minc, outlier_ncwork), 
           rownames = FALSE, 
           filter = "top",
           options = list(pageLength = 10)) |> formatStyle(names(dataset_attrition |>
           select(employeeid, outlier_twyears, outlier_yacompany, outlier_yicrole, outlier_yprom,
-                 outlier_ywcmag, outlier_minc, outlier_ncwork, outlier_ttlyear)), 
+                 outlier_ywcmag, outlier_minc, outlier_ncwork)), 
           lineHeight = "65%")
 ```
 
 El **número total de outliers** en el conjunto de datos es:
 
 ```{r}
-dataset_attrition |> filter(outlier_twyears == 1 | outlier_yacompany == 1 | outlier_yicrole == 1 | outlier_yprom == 1 | outlier_ywcmag == 1 | outlier_minc == 1 | outlier_ncwork == 1 | outlier_ttlyear == 1) |> distinct() |> count()
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+dataset_attrition |> filter(outlier_twyears == 1 | outlier_yacompany == 1 | outlier_yicrole == 1 | outlier_yprom == 1 | outlier_ywcmag == 1 | outlier_minc == 1 | outlier_ncwork == 1) |> distinct() |> count()
+
+
 ```
 
-Para la imputación de outliers se va a realizar una **winzorización** en todas las variables que tenían estos valores extremos:
+##### Imputación de outliers
 
+Para la imputación de outliers se va a realizar una **winzorización** en todas las variables que tenían estos valores extremos. Escogeremos el máximo valor no outlier de nuestra variable y usaremos ese dato para sustituirlo en caso de ser outlier.
+
+En primer lugar vamos a visualizar la distribución de las diferentes variables al aplicar el proceso de winzoricación para comprobar su utilidad.
+
+-   [**Variables *totalworkingyears***]{.hl-bluepastel}
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+max_value <- max(dataset_attrition |> filter(outlier_twyears==0) |> select(totalworkingyears))
+
+
+dataset_attrition |> mutate(twy_winzorized = ifelse(outlier_twyears == 1, max_value,totalworkingyears)) |> select(totalworkingyears, twy_winzorized) |> pivot_longer(cols = c("totalworkingyears","twy_winzorized"), names_to = "Variable", values_to = "Value") |> 
+  ggplot(aes(x = Variable, y = Value, fill = Variable, color = Variable)) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_manual(values = c("#C2185B","#1E2D49")) +
+  scale_color_manual(values = c("#C2185B","#1E2D49")) +
+  labs(title = "Boxplot comparativo",
+      subtitle = "Comparativa entre las distribuciones de la variable totalworkingyears (con y sin Winzorización)"
+    ) +
+theme_minimal()+
+theme(plot.title = element_text(size = 17,face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x = element_blank(),
+      axis.text.x = element_text(size = 13, face = "bold"))
+```
+
+-   [**Variables *yearsatcompany***]{.hl-bluepastel}
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+max_value <- max(dataset_attrition |> filter(outlier_yacompany==0) |> select(yearsatcompany))
+
+
+dataset_attrition |> mutate(ytc_winzorized = ifelse(outlier_yacompany == 1, max_value, yearsatcompany)) |> select(yearsatcompany, ytc_winzorized) |> pivot_longer(cols = c("yearsatcompany","ytc_winzorized"), names_to = "Variable", values_to = "Value") |> 
+  ggplot(aes(x = Variable, y = Value, fill = Variable, color = Variable)) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_manual(values = c("#C2185B","#1E2D49")) +
+  scale_color_manual(values = c("#C2185B","#1E2D49")) +
+  labs(title = "Boxplot comparativo",
+      subtitle = "Comparativa entre las distribuciones de la variable yearsatcompany (con y sin Winzorización)"
+    ) +
+theme_minimal()+
+theme(plot.title = element_text(size = 17,face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x = element_blank(),
+      axis.text.x = element_text(size = 13, face = "bold"))
+```
+
+-   [**Variables *yearsincurrentrole***]{.hl-bluepastel}
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+max_value <- max(dataset_attrition |> filter(outlier_yicrole==0) |> select(yearsincurrentrole))
+
+
+dataset_attrition |> mutate(yicrole_winzorized = ifelse(outlier_yicrole == 1, max_value, yearsincurrentrole)) |> select(yearsincurrentrole, yicrole_winzorized) |> pivot_longer(cols = c("yearsincurrentrole","yicrole_winzorized"), names_to = "Variable", values_to = "Value") |> 
+  ggplot(aes(x = Variable, y = Value, fill = Variable, color = Variable)) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_manual(values = c("#C2185B","#1E2D49")) +
+  scale_color_manual(values = c("#C2185B","#1E2D49")) +
+  labs(title = "Boxplot comparativo",
+      subtitle = "Comparativa entre las distribuciones de la variable yearsincurrentrole (con y sin Winzorización)"
+    ) +
+theme_minimal()+
+theme(plot.title = element_text(size = 17,face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x = element_blank(),
+      axis.text.x = element_text(size = 13, face = "bold"))
+```
+
+-   [**Variables *yearssincelastpromotion***]{.hl-bluepastel}
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+max_value <- max(dataset_attrition |> filter(outlier_yprom==0) |> select(yearssincelastpromotion))
+
+
+dataset_attrition |> mutate(yprom_winzorized = ifelse(outlier_yprom == 1, max_value, yearssincelastpromotion)) |> select(yearssincelastpromotion, yprom_winzorized) |> pivot_longer(cols = c("yearssincelastpromotion","yprom_winzorized"), names_to = "Variable", values_to = "Value") |> 
+  ggplot(aes(x = Variable, y = Value, fill = Variable, color = Variable)) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_manual(values = c("#C2185B","#1E2D49")) +
+  scale_color_manual(values = c("#C2185B","#1E2D49")) +
+  labs(title = "Boxplot comparativo",
+      subtitle = "Comparativa entre las distribuciones de la variable yearssincelastpromotion (con y sin Winzorización)"
+    ) +
+theme_minimal()+
+theme(plot.title = element_text(size = 17,face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x = element_blank(),
+      axis.text.x = element_text(size = 11, face = "bold"))
+```
+
+-   [**Variables *yearswithcurrmanager***]{.hl-bluepastel}
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+max_value <- max(dataset_attrition |> filter(outlier_ywcmag==0) |> select(yearswithcurrmanager))
+
+
+dataset_attrition |> mutate(ywcmag_winzorized = ifelse(outlier_ywcmag == 1, max_value, yearswithcurrmanager)) |> select(yearswithcurrmanager, ywcmag_winzorized) |> pivot_longer(cols = c("yearswithcurrmanager","ywcmag_winzorized"), names_to = "Variable", values_to = "Value") |> 
+  ggplot(aes(x = Variable, y = Value, fill = Variable, color = Variable)) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_manual(values = c("#C2185B","#1E2D49")) +
+  scale_color_manual(values = c("#C2185B","#1E2D49")) +
+  labs(title = "Boxplot comparativo",
+      subtitle = "Comparativa entre las distribuciones de la variable yearswithcurrmanager (con y sin Winzorización)"
+    ) +
+theme_minimal()+
+theme(plot.title = element_text(size = 17,face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x = element_blank(),
+      axis.text.x = element_text(size = 11, face = "bold"))
+```
+
+-   [**Variables *monthlyincome***]{.hl-bluepastel}
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+max_value <- max(dataset_attrition |> filter(outlier_minc==0) |> select(monthlyincome))
+
+
+dataset_attrition |> mutate(mthinc_winzorized = ifelse(outlier_minc == 1, max_value, monthlyincome)) |> select(monthlyincome, mthinc_winzorized) |> pivot_longer(cols = c("monthlyincome","mthinc_winzorized"), names_to = "Variable", values_to = "Value") |> 
+  ggplot(aes(x = Variable, y = Value, fill = Variable, color = Variable)) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_manual(values = c("#C2185B","#1E2D49")) +
+  scale_color_manual(values = c("#C2185B","#1E2D49")) +
+  labs(title = "Boxplot comparativo",
+      subtitle = "Comparativa entre las distribuciones de la variable monthlyincome (con y sin Winzorización)"
+    ) +
+theme_minimal()+
+theme(plot.title = element_text(size = 17,face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x = element_blank(),
+      axis.text.x = element_text(size = 11, face = "bold"))
+```
+
+-   [**Variables *numcompaniesworked***]{.hl-bluepastel}
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+max_value <- max(dataset_attrition |> filter(outlier_ncwork==0) |> select(numcompaniesworked))
+
+
+dataset_attrition |> mutate(nwork_winzorized = ifelse(outlier_ncwork == 1, max_value, numcompaniesworked)) |> select(numcompaniesworked, nwork_winzorized) |> pivot_longer(cols = c("numcompaniesworked","nwork_winzorized"), names_to = "Variable", values_to = "Value") |> 
+  ggplot(aes(x = Variable, y = Value, fill = Variable, color = Variable)) +
+  geom_boxplot(alpha = 0.7) +
+  scale_fill_manual(values = c("#C2185B","#1E2D49")) +
+  scale_color_manual(values = c("#C2185B","#1E2D49")) +
+  labs(title = "Boxplot comparativo",
+      subtitle = "Comparativa entre las distribuciones de la variable numcompaniesworked (con y sin Winzorización)"
+    ) +
+theme_minimal()+
+theme(plot.title = element_text(size = 17,face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x = element_blank(),
+      axis.text.x = element_text(size = 11, face = "bold"))
+```
+
+Observamos gracias a estos gráficos como el proceso de winzorización nos permite reducir la influencia de los valores atípicos en todas las variables por lo que ya podemos continuar con el proceso.
 
 ```{r}
 #| code-fold: true
@@ -2096,8 +2279,6 @@ max_minc_not_outlier <- max(dataset_attrition |> filter(outlier_minc == 0) |> se
 
 max_ncwork_not_outlier <- max(dataset_attrition |> filter(outlier_ncwork == 0) |> select(numcompaniesworked))
 
-max_ttlyear_not_outlier <- max(dataset_attrition |> filter(outlier_ttlyear == 0) |> select(trainingtimeslastyear))
-
 dataset_attrition <- dataset_attrition |> mutate(
                             totalworkingyears = ifelse(outlier_twyears == 1,
                                                       max_twyears_not_outlier,totalworkingyears),
@@ -2112,13 +2293,64 @@ dataset_attrition <- dataset_attrition |> mutate(
                             monthlyincome = ifelse(outlier_minc == 1, 
                                          max_minc_not_outlier, monthlyincome ),
                             numcompaniesworked = ifelse(outlier_ncwork == 1, 
-                                         max_ncwork_not_outlier, numcompaniesworked ),
-                            trainingtimeslastyear = ifelse(outlier_ttlyear == 1, 
-                                         max_ttlyear_not_outlier, trainingtimeslastyear ),) |>
-select(-c(outlier_twyears,outlier_yacompany,outlier_yicrole,outlier_yprom,outlier_ywcmag, outlier_minc,outlier_ttlyear,outlier_ncwork))
-
-datatable(dataset_attrition)
+                                         max_ncwork_not_outlier, numcompaniesworked ),)
 ```
 
+Por último, eliminamos de nuestro dataset aquellas variables que nos habían servido para detectar los valores atípicos. Además guardamos el resultado en un archivo rds.
+
+::: callout-note
+## Apunte sobre el dataset
+
+Se va a renombrar el nombre del dataset a partir de este punto para separar la parte de análisis y depuración de datos de la creación de los modelos
+:::
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+dataset_attrition <- dataset_attrition |> select(-c(outlier_twyears,outlier_yacompany,outlier_yicrole,outlier_yprom,outlier_ywcmag, outlier_minc,outlier_ttlyear,outlier_ncwork))
+
+datatable(dataset_attrition)
+
+saveRDS(dataset_attrition, file = "./data/attrition_data.rds")
+```
+
+Ya tendríamos nuestros depurados por completo y listos para usar en los distintos modelos :)
+
+## Árbol de decisión
+
+### Librerías necesarias
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+rm(list = ls())
+
+library(tidyverse)  # Depuración datos
+library(skimr)      # Resumen numérico
+library(ggplot2)    # Gráficos
+library(tidymodels) # Modelos
+library(rpart)      # CART
+library(rpart.plot) # Graficar árbol
+library(caret)      # Matriz de Confusion
+library(glue)       # pegar texto + variables fácilmente
+library(DT)         # Para mostrar tabla (formatStyle)
+library(ROSE)       # Para Oversampling
+library(yardstick)  # Cómo funcionan modelos
+library(forcats)    # Para factores
+library(pROC)       # ROC y AUC
+```
+
+### Datos iniciales
+
+```{r}
+#Carga de datos
+attrition_data <- readRDS("./data/attrition_data.rds")
+#Eliminar ID
+attrition_data <- attrition_data |> select(-employeeid)
+```
 
 

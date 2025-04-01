@@ -8,7 +8,7 @@
 
 <meta name="author" content="Jorge Galiano García">
 
-<title>caption Prática 1: Tidyverse y gglot</title>
+<title>caption Práctica 1: Tidyverse y gglot</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -116,7 +116,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title"><img src="./img/icon_batman.png" class="img-fluid" alt="caption"> Prática 1: Tidyverse y gglot</h1>
+<h1 class="title"><img src="./img/icon_batman.png" class="img-fluid" alt="caption"> Práctica 1: Tidyverse y gglot</h1>
 </div>
 
 
@@ -327,16 +327,16 @@ Recomendación
 <pre><code># A tibble: 1,555 × 6
    edulit_ind indicator                 country_code country  year student_ratio
    &lt;chr&gt;      &lt;chr&gt;                     &lt;chr&gt;        &lt;chr&gt;   &lt;dbl&gt;         &lt;dbl&gt;
- 1 PTRHC_2    Lower Secondary Education 40619        Asia (…  2012         15.3 
- 2 PTRHC_2    Lower Secondary Education LIE          Liecht…  2016          5.63
- 3 PTRHC_2    Lower Secondary Education 40043        Upper …  2017         13.7 
- 4 PTRHC_2    Lower Secondary Education LCA          Saint …  2015         11.6 
- 5 PTRHC_2    Lower Secondary Education 40515        East A…  2014         14.5 
- 6 PTRHC_2    Lower Secondary Education VNM          Viet N…  2017         16.8 
- 7 PTRHC_2    Lower Secondary Education 40612        Asia (…  2013          9.99
- 8 PTRHC_2    Lower Secondary Education BHR          Bahrain  2013         11.1 
- 9 PTRHC_2    Lower Secondary Education NZL          New Ze…  2014         14.7 
-10 PTRHC_2    Lower Secondary Education 40535        South …  2012         30.6 
+ 1 PTRHC_2    Lower Secondary Education IND          India    2014         30.5 
+ 2 PTRHC_2    Lower Secondary Education MEX          Mexico   2017         19.7 
+ 3 PTRHC_2    Lower Secondary Education 40642        Northe…  2015         11.4 
+ 4 PTRHC_2    Lower Secondary Education 40030        Middle…  2013         17.9 
+ 5 PTRHC_2    Lower Secondary Education 40603        Africa…  2012         17.4 
+ 6 PTRHC_2    Lower Secondary Education GIB          Gibral…  2017         15.5 
+ 7 PTRHC_2    Lower Secondary Education PRT          Portug…  2016          9.49
+ 8 PTRHC_2    Lower Secondary Education 40617        Wester…  2016         16.1 
+ 9 PTRHC_2    Lower Secondary Education 40619        Asia (…  2012         15.3 
+10 PTRHC_2    Lower Secondary Education BTN          Bhutan   2015         13.3 
 # ℹ 1,545 more rows</code></pre>
 </div>
 </div>
@@ -473,16 +473,16 @@ Ayuda
 <pre><code># A tibble: 251 × 7
    edulit_ind indicator      country_code country  year student_ratio mean_ratio
    &lt;chr&gt;      &lt;chr&gt;          &lt;chr&gt;        &lt;chr&gt;   &lt;dbl&gt;         &lt;dbl&gt;      &lt;dbl&gt;
- 1 PTRHC_02   Pre-Primary E… HUN          Hungary  2014         12.8        11.9
- 2 PTRHC_1    Primary Educa… ERI          Eritrea  2014         42.5        36.1
- 3 PTRHC_2    Lower Seconda… GTM          Guatem…  2014         14.3        15.1
- 4 PTRHC_3    Upper Seconda… SUR          Surina…  2014          8.65       15.0
- 5 PTRHC_2T3  Secondary Edu… JAM          Jamaica  2014         16.5        19.3
- 6 PTRHC_1    Primary Educa… KHM          Cambod…  2014         44.6        31.9
- 7 PTRHC_2T3  Secondary Edu… MLI          Mali     2014         18.9        24.3
- 8 PTRHC_2T3  Secondary Edu… SVN          Sloven…  2014         10.1        11.5
- 9 PTRHC_2T3  Secondary Edu… COL          Colomb…  2014         24.9        22.6
-10 PTRHC_2T3  Secondary Edu… COD          Democr…  2014         14.6        24.8
+ 1 PTRHC_1    Primary Educa… ECU          Ecuador  2014         24.7        23.2
+ 2 PTRHC_02   Pre-Primary E… MUS          Maurit…  2014         13.4        15.1
+ 3 PTRHC_1    Primary Educa… LSO          Lesotho  2014         32.8        50.7
+ 4 PTRHC_1    Primary Educa… MLI          Mali     2014         42.5        24.3
+ 5 PTRHC_4    Post-Secondar… CMR          Camero…  2014          9.52       29.5
+ 6 PTRHC_3    Upper Seconda… TLS          Timor-…  2014         28.6        28.6
+ 7 PTRHC_2    Lower Seconda… ERI          Eritrea  2014         40.7        36.1
+ 8 PTRHC_1    Primary Educa… PHL          Philip…  2014         31.4        29.2
+ 9 PTRHC_2T3  Secondary Edu… SWZ          Eswati…  2014         15.9        16.1
+10 PTRHC_5T8  Tertiary Educ… ALB          Albania  2014         23.6        17.5
 # ℹ 241 more rows</code></pre>
 </div>
 </div>
@@ -497,20 +497,20 @@ Ayuda
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>student_data_recent</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 226 × 7
+<pre><code># A tibble: 214 × 7
    edulit_ind indicator      country_code country  year student_ratio mean_ratio
    &lt;chr&gt;      &lt;chr&gt;          &lt;chr&gt;        &lt;chr&gt;   &lt;dbl&gt;         &lt;dbl&gt;      &lt;dbl&gt;
- 1 PTRHC_02   Pre-Primary E… HUN          Hungary  2014         12.8        11.9
- 2 PTRHC_1    Primary Educa… ERI          Eritrea  2014         42.5        36.1
- 3 PTRHC_2    Lower Seconda… GTM          Guatem…  2016         14.2        14.6
- 4 PTRHC_3    Upper Seconda… SUR          Surina…  2014          8.65       15.0
- 5 PTRHC_2T3  Secondary Edu… JAM          Jamaica  2014         16.5        19.3
- 6 PTRHC_1    Primary Educa… KHM          Cambod…  2014         44.6        31.9
- 7 PTRHC_2T3  Secondary Edu… MLI          Mali     2015         19.2        24.7
- 8 PTRHC_2T3  Secondary Edu… SVN          Sloven…  2014         10.1        11.5
- 9 PTRHC_2T3  Secondary Edu… COL          Colomb…  2014         24.9        22.6
-10 PTRHC_2T3  Secondary Edu… COD          Democr…  2014         14.6        24.8
-# ℹ 216 more rows</code></pre>
+ 1 PTRHC_1    Primary Educa… ECU          Ecuador  2016         25.1        22.5
+ 2 PTRHC_02   Pre-Primary E… MUS          Maurit…  2016         12.8        14.6
+ 3 PTRHC_1    Primary Educa… LSO          Lesotho  2014         32.8        50.7
+ 4 PTRHC_1    Primary Educa… MLI          Mali     2017         38.2        21.9
+ 5 PTRHC_4    Post-Secondar… CMR          Camero…  2014          9.52       29.5
+ 6 PTRHC_3    Upper Seconda… TLS          Timor-…  2015         24.6        27.8
+ 7 PTRHC_2    Lower Seconda… ERI          Eritrea  2014         40.7        36.1
+ 8 PTRHC_1    Primary Educa… PHL          Philip…  2014         31.4        29.2
+ 9 PTRHC_2T3  Secondary Edu… SWZ          Eswati…  2014         15.9        16.1
+10 PTRHC_5T8  Tertiary Educ… ALB          Albania  2014         23.6        17.5
+# ℹ 204 more rows</code></pre>
 </div>
 </div>
 </section>
@@ -526,7 +526,7 @@ Ayuda
 <pre><code># A tibble: 1 × 2
   student_ratio_median student_ratio_mean
                  &lt;dbl&gt;              &lt;dbl&gt;
-1                 18.7               22.9</code></pre>
+1                 17.4               20.6</code></pre>
 </div>
 </div>
 <p>Se obtiene la mediana y la media de la variable student_ratio por nivel educativo:</p>
@@ -536,13 +536,13 @@ Ayuda
 <pre><code># A tibble: 7 × 3
   indicator                             student_ratio_median student_ratio_mean
   &lt;chr&gt;                                                &lt;dbl&gt;              &lt;dbl&gt;
-1 Pre-Primary Education                                 18.0               24.6
-2 Primary Education                                     23.7               27.7
-3 Lower Secondary Education                             17.9               21.3
-4 Upper Secondary Education                             16.1               17.6
-5 Secondary Education                                   16.5               18.6
-6 Tertiary Education                                    18.1               19.9
-7 Post-Secondary Non-Tertiary Education                 13.5               35.9</code></pre>
+1 Primary Education                                     23.9               27.1
+2 Pre-Primary Education                                 16.5               18.5
+3 Post-Secondary Non-Tertiary Education                 14.7               29.5
+4 Upper Secondary Education                             13.5               15.6
+5 Lower Secondary Education                             17.8               19.1
+6 Secondary Education                                   17.1               18.7
+7 Tertiary Education                                    16.0               16.1</code></pre>
 </div>
 </div>
 </section>
@@ -558,11 +558,11 @@ Ayuda
 <pre><code># A tibble: 5 × 7
   edulit_ind indicator       country_code country  year student_ratio mean_ratio
   &lt;chr&gt;      &lt;chr&gt;           &lt;chr&gt;        &lt;chr&gt;   &lt;dbl&gt;         &lt;dbl&gt;      &lt;dbl&gt;
-1 PTRHC_4    Post-Secondary… LSO          Lesotho  2014         155         50.7
-2 PTRHC_02   Pre-Primary Ed… TZA          United…  2017         114.        59.4
-3 PTRHC_02   Pre-Primary Ed… GBR          United…  2016          73.3       27.2
-4 PTRHC_1    Primary Educat… MWI          Malawi   2015          69.5       49.8
-5 PTRHC_5T8  Tertiary Educa… SYR          Syrian…  2015          64.4       64.4</code></pre>
+1 PTRHC_4    Post-Secondary… TZA          United…  2014          91.6       70.5
+2 PTRHC_1    Primary Educat… CAF          Centra…  2016          83.4       59.0
+3 PTRHC_4    Post-Secondary… AND          Andorra  2016          65.3       20.2
+4 PTRHC_1    Primary Educat… TCD          Chad     2015          55.5       33.1
+5 PTRHC_1    Primary Educat… MOZ          Mozamb…  2015          54.7       47.2</code></pre>
 </div>
 </div>
 <p>Los 7 países con un ratio más bajo:</p>
@@ -572,13 +572,13 @@ Ayuda
 <pre><code># A tibble: 7 × 7
   edulit_ind indicator       country_code country  year student_ratio mean_ratio
   &lt;chr&gt;      &lt;chr&gt;           &lt;chr&gt;        &lt;chr&gt;   &lt;dbl&gt;         &lt;dbl&gt;      &lt;dbl&gt;
-1 PTRHC_5T8  Tertiary Educa… CUB          Cuba     2014          4.60       8.06
-2 PTRHC_02   Pre-Primary Ed… SWE          Sweden   2014          5.52      16.1 
-3 PTRHC_3    Upper Secondar… HRV          Croatia  2016          6.06       9.43
-4 PTRHC_2    Lower Secondar… LIE          Liecht…  2015          6.15       9.98
-5 PTRHC_2    Lower Secondar… AZE          Azerba…  2017          6.56      11.8 
-6 PTRHC_4    Post-Secondary… BRB          Barbad…  2015          6.82      14.9 
-7 PTRHC_5T8  Tertiary Educa… DEU          Germany  2016          7.56      10.6 </code></pre>
+1 PTRHC_5T8  Tertiary Educa… AND          Andorra  2017          3.91      19.8 
+2 PTRHC_5T8  Tertiary Educa… CUB          Cuba     2016          3.98       8.16
+3 PTRHC_5T8  Tertiary Educa… GRD          Grenada  2016          4.30      11.2 
+4 PTRHC_02   Pre-Primary Ed… ISL          Iceland  2014          4.84       8.29
+5 PTRHC_02   Pre-Primary Ed… SWE          Sweden   2015          5.63      16.1 
+6 PTRHC_2    Lower Secondar… SVN          Sloven…  2016          5.91      10.8 
+7 PTRHC_2    Lower Secondar… MDV          Maldiv…  2015          6.54      11.2 </code></pre>
 </div>
 </div>
 </section>

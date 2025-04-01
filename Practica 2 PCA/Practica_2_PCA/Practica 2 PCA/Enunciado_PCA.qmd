@@ -165,17 +165,17 @@ $$
 \Phi_{1} = 
 0.425897105 \times \text{CO2\_Agri} 
 + 0.323481483 \times \text{CO2\_Min}\\  
-+ 0.445648014	 \times \text{CO2\_Transp} 
++ 0.445648014    \times \text{CO2\_Transp} 
 + 0.448961525 \times \text{CO2\_Domestico}\\ 
-- 0.027534920	\times \text{Transporte carretera} 
+- 0.027534920   \times \text{Transporte carretera} 
 + 0.029352470 \times \text{Renta\_P\_C}\\    
-- 0.159128051	\times \text{I\_Produc\_M}
+- 0.159128051   \times \text{I\_Produc\_M}
 + 0.449901004 \times \text{Pob\_T}\\   
-- 0.004219013	 \times \text{T\_Desemp} 
+- 0.004219013    \times \text{T\_Desemp} 
 - 0.095495484 \times \text{Mort\_Inf}\\    
 + 0.080188861 \times \text{Edad Media} 
 - 0.227421252 \times \text{Dif\_Edad\_G}\\
-- 0.010968751	 \times \text{Tasa\_Nac}
+- 0.010968751    \times \text{Tasa\_Nac}
 - 0.130545828 \times \text{T\_Mort}
 \end{multline*}
 $$
@@ -185,18 +185,18 @@ $$
 \Phi_{2} = 
 0.054691339 \times \text{CO2\_Agri} 
 - 0.053441318 \times \text{CO2\_Min}\\  
-+ 0.064791530	 \times \text{CO2\_Transp} 
++ 0.064791530    \times \text{CO2\_Transp} 
 + 0.109209310 \times \text{CO2\_Domestico}\\ 
-+ 0.237686119	\times \text{Transporte carretera} 
++ 0.237686119   \times \text{Transporte carretera} 
 - 0.224378950 \times \text{Renta\_P\_C}\\    
-- 0.001730536	\times \text{I\_Produc\_M}
+- 0.001730536   \times \text{I\_Produc\_M}
 + 0.124281631 \times \text{Pob\_T}\\   
-+ 0.114090735	 \times \text{T\_Desemp} 
++ 0.114090735    \times \text{T\_Desemp} 
 + 0.222050177 \times \text{Mort\_Inf}\\    
 + 0.492145271 \times \text{Edad Media} 
 + 0.359839721 \times \text{Dif\_Edad\_G}\\
-- 0.395410684	 \times \text{Tasa\_Nac}
-+ 0.515145188	 \times \text{T\_Mort}
+- 0.395410684    \times \text{Tasa\_Nac}
++ 0.515145188    \times \text{T\_Mort}
 \end{multline*}
 $$
 
@@ -205,18 +205,18 @@ $$
 \Phi_{3} = 
 0.10415088 \times \text{CO2\_Agri} 
 + 0.27040075 \times \text{CO2\_Min}\\  
-+ 0.06921754	 \times \text{CO2\_Transp} 
++ 0.06921754     \times \text{CO2\_Transp} 
 + 0.05685151 \times \text{CO2\_Domestico}\\ 
-+ 0.09574450	\times \text{Transporte carretera} 
++ 0.09574450    \times \text{Transporte carretera} 
 - 0.28734428 \times \text{Renta\_P\_C}\\    
-+ 0.51532058	\times \text{I\_Produc\_M}
++ 0.51532058    \times \text{I\_Produc\_M}
 + 0.04727048 \times \text{Pob\_T}\\   
-- 0.43381615	 \times \text{T\_Desemp} 
+- 0.43381615     \times \text{T\_Desemp} 
 + 0.29169783 \times \text{Mort\_Inf}\\    
 - 0.23677355 \times \text{Edad Media} 
 + 0.19418577 \times \text{Dif\_Edad\_G}\\
-+ 0.38793569	\times \text{Tasa\_Nac}
-+ 0.17590143	\times \text{T\_Mort}
++ 0.38793569    \times \text{Tasa\_Nac}
++ 0.17590143    \times \text{T\_Mort}
 \end{multline*}
 $$
 
@@ -225,18 +225,18 @@ $$
 \Phi_{4} = 
 0.176518745 \times \text{CO2\_Agri} 
 - 0.275467346 \times \text{CO2\_Min}\\  
-+ 0.002449672	 \times \text{CO2\_Transp} 
++ 0.002449672    \times \text{CO2\_Transp} 
 + 0.082033771 \times \text{CO2\_Domestico}\\ 
-- 0.720037174	\times \text{Transporte carretera} 
+- 0.720037174   \times \text{Transporte carretera} 
 - 0.161082981 \times \text{Renta\_P\_C}\\    
-+ 0.012586572	\times \text{I\_Produc\_M}
++ 0.012586572   \times \text{I\_Produc\_M}
 + 0.105219452 \times \text{Pob\_T}\\   
-+ 0.333558185	 \times \text{T\_Desemp} 
++ 0.333558185    \times \text{T\_Desemp} 
 + 0.422054008 \times \text{Mort\_Inf}\\    
 - 0.138071749 \times \text{Edad Media} 
 + 0.134381139 \times \text{Dif\_Edad\_G}\\
-+ 0.063806381	\times \text{Tasa\_Nac}
-+ 0.002918671	\times \text{T\_Mort}
++ 0.063806381   \times \text{Tasa\_Nac}
++ 0.002918671   \times \text{T\_Mort}
 \end{multline*}
 $$
 
@@ -273,7 +273,6 @@ pca_fit <- PCA(euro_contam_std[, 2:15], scale.unit = TRUE, ncp = 4, graph = FALS
 head(pca_fit$eig, 4)
 ```
 
-
 Una vez realizado el análisis de componentes principales, los autovectores obtenidos representan las combinaciones lineales de las variables originales que definen cada componente. Estos autovectores pueden visualizarse para comprender cómo se construyen los componentes y saber el peso de cada variable en los distintos componentes.
 
 ```{r}
@@ -291,17 +290,17 @@ $$
 \Phi_{1} = 
 0.425897105 \times \text{CO2\_Agri} 
 + 0.323481483 \times \text{CO2\_Min}\\  
-+ 0.445648014	 \times \text{CO2\_Transp} 
++ 0.445648014    \times \text{CO2\_Transp} 
 + 0.448961525 \times \text{CO2\_Domestico}\\ 
-- 0.027534920	\times \text{Transporte carretera} 
+- 0.027534920   \times \text{Transporte carretera} 
 + 0.029352470 \times \text{Renta\_P\_C}\\    
-- 0.159128051	\times \text{I\_Produc\_M}
+- 0.159128051   \times \text{I\_Produc\_M}
 + 0.449901004 \times \text{Pob\_T}\\   
-- 0.004219013	 \times \text{T\_Desemp} 
+- 0.004219013    \times \text{T\_Desemp} 
 - 0.095495484 \times \text{Mort\_Inf}\\    
 + 0.080188861 \times \text{Edad Media} 
 - 0.227421252 \times \text{Dif\_Edad\_G}\\
-- 0.010968751	 \times \text{Tasa\_Nac}
+- 0.010968751    \times \text{Tasa\_Nac}
 - 0.130545828 \times \text{T\_Mort}
 \end{multline*}
 $$
@@ -311,18 +310,18 @@ $$
 \Phi_{2} = 
 0.054691339 \times \text{CO2\_Agri} 
 - 0.053441318 \times \text{CO2\_Min}\\  
-+ 0.064791530	 \times \text{CO2\_Transp} 
++ 0.064791530    \times \text{CO2\_Transp} 
 + 0.109209310 \times \text{CO2\_Domestico}\\ 
-+ 0.237686119	\times \text{Transporte carretera} 
++ 0.237686119   \times \text{Transporte carretera} 
 - 0.224378950 \times \text{Renta\_P\_C}\\    
-- 0.001730536	\times \text{I\_Produc\_M}
+- 0.001730536   \times \text{I\_Produc\_M}
 + 0.124281631 \times \text{Pob\_T}\\   
-+ 0.114090735	 \times \text{T\_Desemp} 
++ 0.114090735    \times \text{T\_Desemp} 
 + 0.222050177 \times \text{Mort\_Inf}\\    
 + 0.492145271 \times \text{Edad Media} 
 + 0.359839721 \times \text{Dif\_Edad\_G}\\
-- 0.395410684	 \times \text{Tasa\_Nac}
-+ 0.515145188	 \times \text{T\_Mort}
+- 0.395410684    \times \text{Tasa\_Nac}
++ 0.515145188    \times \text{T\_Mort}
 \end{multline*}
 $$
 
@@ -331,18 +330,18 @@ $$
 \Phi_{3} = 
 0.10415088 \times \text{CO2\_Agri} 
 + 0.27040075 \times \text{CO2\_Min}\\  
-+ 0.06921754	 \times \text{CO2\_Transp} 
++ 0.06921754     \times \text{CO2\_Transp} 
 + 0.05685151 \times \text{CO2\_Domestico}\\ 
-+ 0.09574450	\times \text{Transporte carretera} 
++ 0.09574450    \times \text{Transporte carretera} 
 - 0.28734428 \times \text{Renta\_P\_C}\\    
-+ 0.51532058	\times \text{I\_Produc\_M}
++ 0.51532058    \times \text{I\_Produc\_M}
 + 0.04727048 \times \text{Pob\_T}\\   
-- 0.43381615	 \times \text{T\_Desemp} 
+- 0.43381615     \times \text{T\_Desemp} 
 + 0.29169783 \times \text{Mort\_Inf}\\    
 - 0.23677355 \times \text{Edad Media} 
 + 0.19418577 \times \text{Dif\_Edad\_G}\\
-+ 0.38793569	\times \text{Tasa\_Nac}
-+ 0.17590143	\times \text{T\_Mort}
++ 0.38793569    \times \text{Tasa\_Nac}
++ 0.17590143    \times \text{T\_Mort}
 \end{multline*}
 $$
 
@@ -351,21 +350,20 @@ $$
 \Phi_{4} = 
 0.176518745 \times \text{CO2\_Agri} 
 - 0.275467346 \times \text{CO2\_Min}\\  
-+ 0.002449672	 \times \text{CO2\_Transp} 
++ 0.002449672    \times \text{CO2\_Transp} 
 + 0.082033771 \times \text{CO2\_Domestico}\\ 
-- 0.720037174	\times \text{Transporte carretera} 
+- 0.720037174   \times \text{Transporte carretera} 
 - 0.161082981 \times \text{Renta\_P\_C}\\    
-+ 0.012586572	\times \text{I\_Produc\_M}
++ 0.012586572   \times \text{I\_Produc\_M}
 + 0.105219452 \times \text{Pob\_T}\\   
-+ 0.333558185	 \times \text{T\_Desemp} 
++ 0.333558185    \times \text{T\_Desemp} 
 + 0.422054008 \times \text{Mort\_Inf}\\    
 - 0.138071749 \times \text{Edad Media} 
 + 0.134381139 \times \text{Dif\_Edad\_G}\\
-+ 0.063806381	\times \text{Tasa\_Nac}
-+ 0.002918671	\times \text{T\_Mort}
++ 0.063806381   \times \text{Tasa\_Nac}
++ 0.002918671   \times \text{T\_Mort}
 \end{multline*}
-$$
-Para saber con que variable está más correlada la segunda componente se va a visualizar el gráfico de correlación entre las variables originales y los nuevos componentes que han surgido a partir del PCA y nos vamos a centrar en el segundo componente.
+$$ Para saber con que variable está más correlada la segunda componente se va a visualizar el gráfico de correlación entre las variables originales y los nuevos componentes que han surgido a partir del PCA y nos vamos a centrar en el segundo componente.
 
 ```{r}
 #| code-fold: true
@@ -401,18 +399,17 @@ ggparcoord(comp_corr_data,
 
 ```
 
-Podemos observar que la segunda componente está fuertemente relacionada de forma positiva con la Edad_Media, Dif_Edad_G y con la T_Mort, mientras que de manera inversa, está muy relacionada con la Tasa_Nac. 
+Podemos observar que la segunda componente está fuertemente relacionada de forma positiva con la Edad_Media, Dif_Edad_G y con la T_Mort, mientras que de manera inversa, está muy relacionada con la Tasa_Nac.
 
 Por lo tanto podemos deducir que esta segunda componente representa la edad de la población, la diferencia de edad entre hombres y mujeres y la tasa de mortalidad. También se relaciona con la natalidad de forma inversa.
 
 En cuanto al resto de componentes y su relación con las variables originales:
 
-* **La primera componente** está fuertemente relacionada de forma positiva con las variables CO2_Agri, CO2_Min, CO2_Transp, CO2_Domestico y Pob_T por tanto podemos deducir que representa la relación entre las emisiones de C02 y la población de los países.
+-   **La primera componente** está fuertemente relacionada de forma positiva con las variables CO2_Agri, CO2_Min, CO2_Transp, CO2_Domestico y Pob_T por tanto podemos deducir que representa la relación entre las emisiones de C02 y la población de los países.
 
-* **La tercera componente** tiene una fuerte relación positiva con I_Product_M y Tasa_Nac e inversa con T_Desempleo por lo que representa la relación entre la producción de la industria y la tasa de desempleo en el país que además refleja una fuerte relación de estas dos variables con la natalidad.
+-   **La tercera componente** tiene una fuerte relación positiva con I_Product_M y Tasa_Nac e inversa con T_Desempleo por lo que representa la relación entre la producción de la industria y la tasa de desempleo en el país que además refleja una fuerte relación de estas dos variables con la natalidad.
 
-* **La cuarta componente** únicamente destaca en una correlación negativa con la variable de Transporte carretera que representa la información de forma inversa del transporte por este medio.
-
+-   **La cuarta componente** únicamente destaca en una correlación negativa con la variable de Transporte carretera que representa la información de forma inversa del transporte por este medio.
 
 Visualizamos la relación de los nuevos componentes del PCA con los distintos países
 
@@ -427,7 +424,6 @@ ggpairs(scores[, c("Dim.1", "Dim.2", "Dim.3", "Dim.4")],
        upper = list(continuous = "blank")) +
   ggtitle("Gráfico de pares de los componentes principales")
 ```
-
 
 Para mostrar y explicar en detalle la relación entre las variables originales y los nuevos componentes se va a poner de ejemplo la primera componente.
 
