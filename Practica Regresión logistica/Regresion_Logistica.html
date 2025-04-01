@@ -313,6 +313,7 @@ window.Quarto = {
 <h3 class="anchored" data-anchor-id="metricas-de-la-regresión-logística">Metricas de la regresión logística</h3>
 <section id="matriz-de-confusión" class="level4">
 <h4 class="anchored" data-anchor-id="matriz-de-confusión">Matriz de confusión</h4>
+<p>La matriz de confusión permite evaluar el rendimiento de un modelo comparando los valores predichos con los valores reales de un dataset.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>conf_mat <span class="ot">&lt;-</span> <span class="fu">confusionMatrix</span>(predicciones<span class="sc">$</span>.pred_class, </span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>                             challenger_data<span class="sc">$</span>accident, <span class="at">positive =</span> <span class="st">"1"</span>)</span>
@@ -350,6 +351,7 @@ Prediction  0  1
 </section>
 <section id="accuracy" class="level4">
 <h4 class="anchored" data-anchor-id="accuracy">Accuracy</h4>
+<p>La métrica de accuracy representa la proporción de predicciones correctas realizadas por nuestro modelo:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>accuracy_value <span class="ot">&lt;-</span> conf_mat[[<span class="st">"overall"</span>]][[<span class="st">"Accuracy"</span>]]</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -361,6 +363,7 @@ Prediction  0  1
 </section>
 <section id="sensitivity" class="level4">
 <h4 class="anchored" data-anchor-id="sensitivity">Sensitivity</h4>
+<p>La sensibilidad de un modelo es la capacidad que tiene este mismo modelo de detectar correctamente casos positivos, es este caso lo obtenemos de la matriz de confusión de la siguiente forma:</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>sensitivity_value <span class="ot">&lt;-</span> conf_mat[[<span class="st">"byClass"</span>]][[<span class="st">"Sensitivity"</span>]]</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -372,6 +375,7 @@ Prediction  0  1
 </section>
 <section id="specificity" class="level4">
 <h4 class="anchored" data-anchor-id="specificity">Specificity</h4>
+<p>La métrica ‘Specificity’ mide la proporción de verdaderos negativos que el modelo ha identificado correctamente.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>specificity_value <span class="ot">&lt;-</span> conf_mat[[<span class="st">"byClass"</span>]][[<span class="st">"Specificity"</span>]]</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -383,6 +387,8 @@ Prediction  0  1
 </section>
 <section id="curva-roc-y-auc" class="level4">
 <h4 class="anchored" data-anchor-id="curva-roc-y-auc">Curva ROC y AUC</h4>
+<p>La curva ROC representa la relación entre tasa de verdaderos positivos (Sensitivity) y la tasa de falsos positivos (1 - Specificity)</p>
+<p>El AUC (Area Under the Curve) mide qué tan bien el modelo distingue entre clases, en este caso observamos que es mejor que el azar ya que es &gt; 0.5</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>roc_curve <span class="ot">&lt;-</span> predicciones <span class="sc">|&gt;</span> <span class="fu">roc_curve</span>(<span class="at">truth =</span> accident, .pred_0)</span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a></span>

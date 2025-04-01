@@ -176,6 +176,8 @@ $$
 
 #### Matriz de confusión
 
+La matriz de confusión permite evaluar el rendimiento de un modelo comparando los valores predichos con los valores reales de un dataset.
+
 ```{r}
 conf_mat <- confusionMatrix(predicciones$.pred_class, 
                              challenger_data$accident, positive = "1")
@@ -183,6 +185,8 @@ conf_mat
 ```
 
 #### Accuracy
+
+La métrica de accuracy representa la proporción de predicciones correctas realizadas por nuestro modelo:
 
 ```{r}
 accuracy_value <- conf_mat[["overall"]][["Accuracy"]]
@@ -192,6 +196,8 @@ accuracy_value
 
 #### Sensitivity
 
+La sensibilidad de un modelo es la capacidad que tiene este mismo modelo de detectar correctamente casos positivos, es este caso lo obtenemos de la matriz de confusión de la siguiente forma:
+
 ```{r}
 sensitivity_value <- conf_mat[["byClass"]][["Sensitivity"]]
 
@@ -200,6 +206,8 @@ sensitivity_value
 
 #### Specificity
 
+La métrica 'Specificity' mide la proporción de verdaderos negativos que el modelo ha identificado correctamente.
+
 ```{r}
 specificity_value <- conf_mat[["byClass"]][["Specificity"]]
 
@@ -207,6 +215,10 @@ specificity_value
 ```
 
 #### Curva ROC y AUC
+
+La curva ROC representa la relación entre tasa de verdaderos positivos (Sensitivity) y la tasa de falsos positivos (1 - Specificity)
+
+El AUC (Area Under the Curve) mide qué tan bien el modelo distingue entre clases, en este caso observamos que es mejor que el azar ya que es > 0.5
 
 ```{r}
 roc_curve <- predicciones |> roc_curve(truth = accident, .pred_0)
