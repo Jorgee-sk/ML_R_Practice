@@ -3254,6 +3254,8 @@ attrition_cv_results <- attrition_knn_fit_tune |> collect_metrics(summarize = FA
               arrange(desc(accuracy))
 ```
 
+Las métricas de los diferentes modelos entrenados son las siguientes: 
+
 ```{r}
 #| message: false
 #| warning: false
@@ -3263,4 +3265,48 @@ datatable(cv_results,
           filter = "top",
           options = list(pageLength = 10, dom = "tip")) |> formatStyle(names(attrition_cv_results))
 ```
+
+
+Graficamos los 10 mejores resultados de nuestro entrenamiento de modelos. Para ello vamos a agrupar cada modelo y calcular la media en cada una de las métricas para ver los que son mejores.
+
+
+```{r}
+
+attrition_cv_results_group <- attrition_cv_results |> group_by(model) |>  
+                                                      summarise(accuracy = mean(accuracy),
+                                                                 sensitivity = mean(sens),
+                                                                 specificity = mean(spec),
+                                                                 auc = mean(roc_auc)) |>  
+                                                      arrange(desc(accuracy)) |>   
+                                                      slice_head(n = 10) |> 
+                                                      select(model)
+
+attrition_cv_results_top <- attrition_cv_results |>  inner_join(attrition_cv_results_group, by = "model")
+
+
+attrition_cv_results_top |> ggplot(aes(x=model, y=sens)) +
+stat_boxplot(geom = "errorbar",width = 0.25) + 
+geom_boxplot( fill = "#e11b63") +
+labs( title = "Cross Validation Results",
+      subtitle = "Comparativa (en términos de sensitivity) de los modelos")+
+scale_y_continuous(breaks = seq(from = 0.2, to=1, by=0.02))+
+stat_summary(fun.y=mean, geom="point", shape=23, size=1.5, color="black", fill="black") +
+theme_minimal()+
+theme(plot.title= element_text(size=15, face = "bold" ),
+      axis.title.x = element_blank(),
+      axis.text.x  = element_text(size=10,face = "bold", angle = 90),
+      axis.title.y = element_blank(),
+      axis.text.y  = element_text(size=10,face = "bold"),
+      legend.position = "None"
+      )
+```
+
+El modelo "100 - biweight - 2" es el mejor en esta comparativa.
+
+- Sensibilidad más alta en mediana: es crucial para detectar bien los positivos (en este problema es lo que nos interesa).
+
+- Menor dispersión: predicciones estables.
+
+Los hiperparámetros de este modelo son 100 como número de vecinos, biweight como función que utilice el kernel para promediar los pesos y distancia euclídea.
+
 
