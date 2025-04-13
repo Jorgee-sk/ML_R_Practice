@@ -3014,6 +3014,17 @@ plot(roc_curve2,
 
 En cuanto a nuestro modelo de árbol de decisión podemos decir que tiene una buena precisión, con un **83.03%** de **accuracy**, lo que indica que acierta en la mayoría de los casos. La **sensibilidad** ha mejorado notablemente respecto a la que se veía en el primer modelo, alcanzando **67.5%**, lo que refleja una mejor capacidad para detectar empleados que dejarán la empresa (ha empeorado en el conjunto de test pero esto es algo normal). El valor de **specificity** es alto (**85.14%**), lo que sugiere que el modelo identifica correctamente a aquellos empleados que no se van. Finalmente, el **AUC** de **0.7762** demuestra una capacidad razonable para distinguir entre las dos clases.
 
+```{r}
+#| message: false
+#| warning: false
+#| echo: false
+
+saveRDS(statistics, file = "./outputs/tree_stats.rds")
+saveRDS(roc_curve, file = "./outputs/tree_roc_auc.rds")
+saveRDS(predicted, file = "./outputs/tree_preds.rds")
+```
+
+
 
 ## KNN K-Nearest Neighbors
 
@@ -3229,7 +3240,6 @@ Como resultado de esto tenemos inicialmente 40 modelos que tras aplicar cross va
 #| message: false
 #| warning: false
 #| eval: false
-# Tiempo de ejecución: 
 attrition_knn_fit_tune <- attrition_wflow |> 
                        tune_grid(resamples = folds, 
                                  grid = grid_knn,
@@ -3260,7 +3270,7 @@ Las métricas de los diferentes modelos entrenados son las siguientes:
 #| message: false
 #| warning: false
 #| echo: false
-datatable(cv_results, 
+datatable(attrition_cv_results, 
           rownames = FALSE, 
           filter = "top",
           options = list(pageLength = 10, dom = "tip")) |> formatStyle(names(attrition_cv_results))
@@ -3271,7 +3281,10 @@ Graficamos los 10 mejores resultados de nuestro entrenamiento de modelos. Para e
 
 
 ```{r}
-
+#| message: false
+#| warning: false
+#| code-fold: true
+#| 
 attrition_cv_results_group <- attrition_cv_results |> group_by(model) |>  
                                                       summarise(accuracy = mean(accuracy),
                                                                  sensitivity = mean(sens),
@@ -3303,10 +3316,193 @@ theme(plot.title= element_text(size=15, face = "bold" ),
 
 El modelo "100 - biweight - 2" es el mejor en esta comparativa.
 
-- Sensibilidad más alta en mediana: es crucial para detectar bien los positivos (en este problema es lo que nos interesa).
+- **Sensibilidad más alta en mediana**: es crucial para detectar bien los positivos (en este problema es lo que nos interesa).
 
-- Menor dispersión: predicciones estables.
+- **Menor dispersión**: predicciones estables.
 
 Los hiperparámetros de este modelo son 100 como número de vecinos, biweight como función que utilice el kernel para promediar los pesos y distancia euclídea.
 
+Por tanto el 🏆 **modelo ganador** 🏆 es el de la combinación `k = 100` + `weight_func = "biweight"` + `dist = 2`
+
+### Modelo ganador
+
+Generamos el modelo ganador
+
+```{r}
+best_knn_model <- nearest_neighbor(mode = "classification", 
+                              neighbors = 100,
+                              weight_func = "biweight", 
+                              dist_power = 2) |>
+                  set_engine("kknn")
+```
+
+Una vez generado el modelo ganador construimos el flujo de trabajo sobre este modelo
+
+```{r}
+best_attrition_wflow <-  workflow() |>  add_recipe(attrition_recipe) |>  add_model(best_knn_model)
+```
+
+Ajustamos el modelo al conjunto de datos de entrenamiento
+
+```{r}
+best_attrition_knn_fit <- best_attrition_wflow |> fit(data = attrition_train)
+```
+
+
+### Predicciones en test
+
+Se va a aplicar el modelo ganador al conjunto de test que se reservó al comenzar a tratar los datos para el KNN.
+
+```{r}
+#| message: false
+#| warning: false
+
+attrition_test <- augment(best_attrition_knn_fit, attrition_test)
+```
+
+#### Matriz de confusión 
+
+```{r}
+#| message: false
+#| warning: false
+# Matriz de Confusion
+conf_mat <- confusionMatrix(attrition_test$.pred_class, attrition_test$attrition, positive = "1")
+# Accuracy
+accuracy <- conf_mat[["overall"]][["Accuracy"]]
+# Sensitivity
+sensitivity <- conf_mat[["byClass"]][["Sensitivity"]]
+# Specificity
+specificity <- conf_mat[["byClass"]][["Specificity"]]
+# AUC
+auc <- attrition_test |>  roc_auc(truth = attrition, .pred_0)
+auc_value <- auc |> pull(.estimate)
+
+statistics <- data.frame (metrics  = c("accuracy","sensitivity","specificity","auc"),
+                          values = c(accuracy,sensitivity,specificity,auc_value)
+                          )
+knitr::kable(statistics , col.names = gsub("[.]", " ", names(statistics)))
+```
+
+
+#### Curva ROC y AUC
+
+Al igual que en el modelo de árbol de decisión, en KNN también al realizar el cálculo del auc en la curva roc sale a la inversa por lo que para obtener los valores correctos indicaremos la clase 0 en vez de la clase 1 que es la que nos interesa predecir.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+# Curva ROC: etiqueta real vs probabilid de 1
+roc_curve_knn <- attrition_test |> roc_curve(truth = attrition, .pred_0)
+
+#-----------------------------------------------------------------
+# Gráfico Curva ROC
+#-----------------------------------------------------------------
+
+ggplot(roc_curve_knn, aes(x = 1 - specificity, y = sensitivity)) +
+geom_line(lwd = 1, alpha = 0.85, color = "#e01b63") +
+geom_abline(lty = "dashed") +
+coord_equal() +
+labs(x = "1 - Specificity",
+     y = "Sensitivity",
+     title = "CURVA ROC",
+     subtitle = glue("AUC = {round(auc_value, 3)}"))+
+theme_minimal()+
+theme(axis.title.y = element_text(face="bold"),
+      axis.title.x = element_text(face="bold"),
+      plot.title = element_text(size =15,face="bold"),
+      plot.subtitle = element_text(size  =10))
+```
+
+
+```{r}
+#| message: false
+#| warning: false
+#| echo: false
+
+saveRDS(statistics, file = "./outputs/knn_stats.rds")
+saveRDS(roc_curve_knn, file = "./outputs/knn_roc_auc.rds")
+saveRDS(attrition_test, file = "./outputs/knn_preds.rds")
+```
+
+
+### ¿Cómo vamos?
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true 
+#| 
+statistics_tree <- readRDS("./outputs/tree_stats.rds")
+statistics_tree$model <- "Árbol"
+
+roc_curve_tree <- readRDS("./outputs/tree_roc_auc.rds")
+roc_curve_tree$model <- "Árbol"
+
+statistics_knn <- readRDS("./outputs/knn_stats.rds")
+statistics_knn$model <- "KNN"
+
+roc_curve_knn <- readRDS("./outputs/knn_roc_auc.rds")
+roc_curve_knn$model <- "KNN"
+
+statistics <- rbind(statistics_knn,statistics_tree)
+roc_curve <- rbind(roc_curve_knn,roc_curve_tree)
+```
+
+```{r}
+#| message: false
+#| warning: false
+#| echo: false
+
+# Matriz de Confusión (Métricas)
+datatable(statistics|> arrange(metrics, values, model), rownames = FALSE, filter = "top",options = list(pageLength = 2)) |> formatStyle(names(statistics), lineHeight = "65%")
+```
+
+```{r}
+#| message: false
+#| warning: false
+#| echo: false
+statistics |> ggplot(aes(x = metrics , y= values, fill = model)) +
+               geom_bar( alpha = 0.85, position = "dodge", stat = "identity") +
+               scale_fill_manual(values = c("Árbol" = "#84b6f4", "KNN" = "#ffca99", "Red Neuronal" = "#a2c8cc", "SVM Lineal" = "#ff8097", "SVM Poli" = "#623CEA", "Ensamblado" = "#483A58")) +
+               labs(#x = "métrica", 
+                    #y = "frecuencia absoluta", 
+                    title = "Comparativa Modelos",
+                    subtitle = "Resultados de las métricas de cada modelo"
+                )+
+                theme_minimal()+theme_ipsum(base_family = "Arial")+
+                theme(axis.title.y = element_blank(),
+                      axis.title.x = element_blank(),
+                      axis.text.x = element_text(size = 12,face = "bold"),
+                      plot.title = element_text(size =15,face="bold"),
+                      plot.subtitle = element_text(size  =10))
+```
+
+```{r}
+#| message: false
+#| warning: false
+#| echo: false
+
+# Gráfico Curva ROC
+ggplot(roc_curve, aes(x = 1 - specificity, y = sensitivity, colour=model)) +
+# Línea de tamaño 2, color azul y transparencia 0.85
+geom_line(lwd = 1, alpha = 0.85) +
+# Añadimos diagonal de línea tipo 4
+geom_abline(lty = "dashed") +
+# Hacemos el gráfico cuadrado
+coord_equal() +
+# Color
+scale_colour_manual(values = c("Árbol" = "#84b6f4", "KNN" = "#ffca99", "Red Neuronal" = "#a2c8cc", "SVM Lineal" = "#ff8097", "SVM Poli" = "#623CEA", "Ensamblado" = "#483A58")) +
+# Etiquetas
+labs(x = "1 - Specificity",
+     y = "Sensitivity",
+     title = "Comparativa Modelos",
+     subtitle = "Curva ROC (test) de cada modelo empleado")+
+theme_minimal()+
+# Tema
+  theme(axis.title.y = element_text(face="bold"),
+      axis.title.x = element_text(face="bold"),
+      plot.title = element_text(size =15,face="bold"),
+      plot.subtitle = element_text(size  =10))
+```
 
