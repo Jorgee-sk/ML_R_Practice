@@ -70,7 +70,7 @@ Construir un modelo (varios en nuestro caso) para [**predecir la probabilidad de
 ## Librerías
 
 ```{r}
-#| code-fold: true
+#| code-fold: false
 #| message: false
 #| warning: false
 
@@ -119,7 +119,7 @@ dataset_attrition <- read.csv(file = "./data/watson_healthcare_modified.csv")
 Además vamos a convertir la variable objetivo, que en nuestro caso es **Attrition** a tipo factor donde podrá obtener los valores **No** y **Yes**. Por otro lado se va a realizar una transformación de tal forma que la variable quede representada con valores 1-Yes y 0-No y se mantenga como categórica.
 
 ```{r}
-#| code-fold: true
+#| code-fold: false
 #| message: false
 #| warning: false
 
@@ -138,7 +138,7 @@ dataset_attrition$Attrition <- as.factor(dataset_attrition$Attrition)
 También es importante **estandarizar los nombres de las variables de nuestro dataset**. En general se puede ver que el dataset viene bastante bien preparado ya que no contiene espacios pero si que tiene [UpperCamelCase](https://wiki.c2.com/?PascalCase) por lo que deberemos convertir las variables a minúsculas.
 
 ```{r}
-#| code-fold: true
+#| code-fold: false
 #| message: false
 #| warning: false
 
@@ -216,7 +216,7 @@ theme(plot.title = element_text(size = 20, face = "bold"),
 Por lo que podemos deducir que es una variable que no aporta valor predictivo ni analítico y por tanto se puede eliminar de nuestro dataset.
 
 ```{r}
-#| code-fold: true
+#| code-fold: false
 #| message: false
 #| warning: false
 #| 
@@ -228,7 +228,7 @@ dataset_attrition = select(dataset_attrition, -over18)
 Esta variable representa el número de empleados por fila dentro del dataset, es una variable redundante ya que por fila solo habrá un empleado dentro de nuestros datos y por tanto no nos aporta ningún tipo de información por lo que puede ser eliminada.
 
 ```{r}
-#| code-fold: true
+#| code-fold: false
 #| message: false
 #| warning: false
 #| 
@@ -240,7 +240,7 @@ dataset_attrition = select(dataset_attrition, -employeecount)
 Esta variable representa el número de horas que trabaja un empleado cada dos semanas. Es un valor constante para todos los empleados por lo que al igual que en los dos casos anteriores, no aporta valor ni predictivo ni analítico y se puede eliminar.
 
 ```{r}
-#| code-fold: true
+#| code-fold: false
 #| message: false
 #| warning: false
 #| 
@@ -271,7 +271,7 @@ theme(plot.title = element_text(size = 20, face = "bold"),
 Se va a realizar una transformación de tal forma que las variables dicotómicas queden representadas con valores **1-Yes** y **0-No**.
 
 ```{r}
-#| code-fold: true
+#| code-fold: false
 #| message: false
 #| warning: false
 #| 
@@ -436,7 +436,7 @@ grid.arrange(plot1, plot2, ncol = 2)
 Con estos gráficos podemos observar que los porcentajes de **Admin** y **Administrative** en los diferentes departamentos o campos de trabajo son similares, por lo que sumado a una media de salario similar podemos llegar a deducir que la categoría **Admin** se puede comportar como **Administrative**
 
 ```{r}
-#| code-fold: true
+#| code-fold: false
 #| message: false
 #| warning: false
 
@@ -484,7 +484,7 @@ theme(plot.title = element_text(size = 15, face = "bold"),
 Observando las diferentes categorías podemos deducir que se pueden simplificar los datos a viaja o no viaja el empleado. Esto convertirá la variable en dicotómica.
 
 ```{r}
-#| code-fold: true
+#| code-fold: false
 #| message: false
 #| warning: false
 
@@ -2320,10 +2320,38 @@ Ya tendríamos nuestros depurados por completo y listos para usar en los distint
 
 ## Árbol de decisión
 
+### Teoría del modelo
+
+Los árboles de decisión son modelos predictivos que utilizan una estructura jerárquica basada en reglas binarias para clasificar datos o predecir valores numéricos. 
+
+Su fundamento matemático combina teoría de probabilidad, medidas de impureza y optimización recursiva.
+
+#### Estructura básica 
+
+Un árbol consta de:
+
+- **Nodos**: Segmentos que contienen subconjuntos de la muestra.
+
+- **Nodo raíz**: Conjunto inicial de datos.
+
+- **Nodos padre/hijo**: Nodos predecesor/sucesor de otro nodo. Se trata de un punto de decisión con condiciones.
+
+- **Ramas**: Posibles caminos según las condiciones.
+
+- **Nodos hoja**: Nodos sin hijo que finalizan una rama y contienen resultados finales (clases o valores numéricos).
+
+#### Criterios de división
+
+##### Indice de Gini
+
+Calcula la impureza del nodo como la probabilidad de obtener dos elementos de un mismo nodo y que no ocurra que ambos pertenecen a la misma clase.
+
+
+
 ### Librerías necesarias
 
 ```{r}
-#| code-fold: true
+#| code-fold: false
 #| message: false
 #| warning: false
 
@@ -2346,11 +2374,893 @@ library(pROC)       # ROC y AUC
 
 ### Datos iniciales
 
+En primer lugar se importan los datos que han sido preprocesados previamente y se elimina la variable del identificador que no nos aportará información.
+
 ```{r}
+#| code-fold: false
+#| message: false
+#| warning: false
+
 #Carga de datos
 attrition_data <- readRDS("./data/attrition_data.rds")
 #Eliminar ID
 attrition_data <- attrition_data |> select(-employeeid)
 ```
 
+Vamos a observar la distribución de nuestra variable **target** que en este caso es la variable **attrition**:
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+attrition_data |> group_by(attrition) |> summarise(n = n(), Porc = round(n()*100.0/nrow(attrition_data),2)) |> 
+ggplot(aes(x = attrition, y = n, fill = attrition)) +
+geom_col(position = "dodge", alpha =0.8) +
+geom_text(aes(label = paste(n," (",Porc,"%)", sep ="")),colour = "black", size = 4,vjust = -0.5, position = position_dodge(.9)) +
+ylim(0,5300)+
+scale_fill_manual(values = c("#023047","#C2185B")) +
+labs(title = "Distribución del target",
+     subtitle = "Reparto de niveles de la variable attrition")+
+theme_minimal()+
+theme(plot.title = element_text(size = 20, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 12),
+      legend.position = "None"
+      )
+```
+
+Podemos ver como **attrition** se trata de una variable que está extremadamente desbalanceada por lo que posteriormente tendremos que solucionar este problema.
+
+
+### Train y test
+
+Se va a seleccionar inicialmente un **80%** de los datos para nuestro conjunto de entrenamiento (**Train**) y un **20%** para los del conjunto de validación (**Test**). Asignamos también una semilla para que se haga siempre la misma división.
+
+```{r}
+#| code-fold: false
+#| message: false
+#| warning: false
+
+set.seed(200900)
+
+attrition_split <- initial_split(attrition_data, strata = attrition, prop = 0.80)
+
+# Train
+attrition_train <- training(attrition_split)
+# Test
+attrition_test <- testing(attrition_split)
+```
+
+
+Para comprobar que esta división se haya hecho de forma correcta se observa si se mantiene la proporción de nuestra variable **target**:
+
+
+```{r}
+#| code-fold: false
+#| message: false
+#| warning: false
+
+# Reparto de Vaccine en Train
+attrition_train |> group_by(attrition) |> summarise(n = n()) |> mutate(prop = n /sum(n))
+# Reparto de Vaccine en Test
+attrition_test |> group_by(attrition) |> summarise(n = n()) |> mutate(prop = n /sum(n))
+```
+
+Vemos como si que se mantiene por lo que la división de los datos es correcta.
+
+### Entrenamiento
+
+La fase de entrenamiento de un árbol de decisión esta dividida en varias partes, en primer lugar vamos a comenzar por la **división en k-folds**.
+
+#### División en k-folds
+
+El conjunto de datos de entrenamiento se dividirá en una serie de trozos denominados **folds**. Se creará un modelo de árbol de decisión utilizando como entrenamiento toda esta serie de trozos a excepción de uno. Este se tratará del validation-fold mediante el cual evaluaremos nuestro modelo.
+
+Este proceso se realiza tantas veces como divisiones se hayan creado en el conjunto de datos.
+
+Para realizar el proceso de k-folding se va a utilizar la función proporcionada en la asignatura de aprendizaje automático. 
+
+```{r}
+#| code-fold: false
+#| message: false
+#| warning: false
+#| 
+source("./funciones/utils.r")
+
+attrition_data_cv <- fold_rep_for_cv(data = attrition_train, folds = 5, reps = 3, target = "attrition", seed = 200900)
+```
+
+
+#### Fine-tuning de los hiperparámetros
+
+Para configurar los valores de nuestros **hiperparámetros** en el árbol de decisión vamos a crear dos grids, uno para el minbucket que define el número mínimo de observaciones que debe tener una hoja del árbol y otro para la complejidad de la poda del árbol.
+
+- El grid de **minbucket** irá desde 0.5% hasta 2.5% **(0.5, 1, 1.5, 2, 2.5)**. Con estos valores vamos a ser capaces de abarcar desde hojas del árbol que contengan poca información cuando se use 0.5% hasta árboles más regularizados que nos permitirán generalizar mejor cuando sea 2.5%.
+
+
+- El grid de **complejidad de poda** será **0.0001,0.001,0.01,0.1** para manejar diferentes podas que nos permitirán encontrar un equilibrio entre complejidad y generalización.
+
+```{r}
+#| code-fold: false
+#| message: false
+#| warning: false
+#| 
+minbucket_list <- seq(from = 0.5, to=2.5, by=0.5)
+
+complexity_list <- c(0.0001,0.001,0.01,0.1)
+```
+
+#### Primer entrenamiento
+
+Una vez definido el grid de nuestros hiperparámetros en el árbol de decisión y realizadas las divisiones de los datos para hacer una validación cruzada ya estaríamos listos para efectuar el primer entrenamiento del modelo:
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| results: false
+#| eval: false
+
+cv_results <-  data.frame(rep          = integer(),
+                           fold         = integer(),
+                           minbucket    = integer(),
+                           cp           = double(),
+                           accuracy     = double(),
+                           kappa        = double(),
+                           sensitivity  = double(),
+                           specificity  = double(),
+                           auc          = double())
+
+
+for (data_fold in attrition_data_cv) 
+{
+    #---------------------------------
+    # Conjuntos de Train y Val
+    #---------------------------------
+    rep_value <- data_fold[["repeat"]]
+    fold_value <- data_fold[["fold"]]
+    train <- data_fold[["train_data"]]
+    val <- data_fold[["validation_data"]]
+    
+    #---------------------------------
+    # Fine tunning con diferentes hiperparámetros
+    #---------------------------------
+    for (bucket in minbucket_list)
+    {
+        for (complexity_parameter in complexity_list)
+        {
+            # ----------------- 
+            #      Modelo
+            # -----------------
+            tree <- rpart(data = train,
+                          attrition ~ .,
+                          control = rpart.control(minbucket = as.integer((bucket*nrow(train))/100), 
+                          cp = complexity_parameter))
+            
+            
+            # Predicciones en Val
+            pred <- predict(tree, newdata = val, type = "class") 
+            # Matriz de confusión
+            conf_mat <- confusionMatrix(pred, val[["attrition"]], positive = "1")
+            # Accuracy
+            accuracy_value <- conf_mat[["overall"]][["Accuracy"]]
+            # Kappa
+            kappa_value <- conf_mat[["overall"]][["Kappa"]]
+            # Sensitivity
+            sensitivity_value <- conf_mat[["byClass"]][["Sensitivity"]]
+            # Specificity
+            specificity_value <- conf_mat[["byClass"]][["Specificity"]]
+            # Curva ROC y AUC
+            pred <- as.data.frame(predict(tree, val, type="prob"))
+            pred$real_class <- as.factor(val[["attrition"]])
+            pred <- pred |>  rename(prob_attrition = "1", prob_none = "0")
+            auc <- pred |>  roc_auc(truth = real_class, prob_attrition)
+            auc_value <- auc |>  pull(.estimate)
+            # ----------------------------------------> Guardamos resultados
+            cv_results[nrow(cv_results) + 1,] <- c( rep_value,
+                                                    fold_value,
+                                                    bucket,
+                                                    complexity_parameter,
+                                                    round(accuracy_value,6),
+                                                    round(kappa_value,6),
+                                                    round(sensitivity_value,6),
+                                                    round(specificity_value,6),
+                                                    round(auc_value,6))
+            # Para mostrar por pantalla lo que  se va ejecutando
+            texto <- paste("Repeat: ",rep_value," - Fold: ",fold_value, " - Minbucket: ",bucket, sep = "" )
+            print(texto)
+            print("-----------------------")
+        #}
+        }
+        
+    }
+         
+}
+# Conversión a formatos correctos
+cv_results$minbucket <- as.double(cv_results$minbucket)
+cv_results$cp <- as.double(cv_results$cp)
+cv_results$accuracy <- as.double(cv_results$accuracy)
+cv_results$kappa <- as.double(cv_results$kappa)
+cv_results$sensitivity <- as.double(cv_results$sensitivity)
+cv_results$specificity <- as.double(cv_results$specificity)
+cv_results$auc <- as.double(cv_results$auc)
+# Variable con nombre modelos
+cv_results <- cv_results |>  mutate(model = paste(minbucket, " - ", cp, sep = ""))
+# Guardamos
+saveRDS(cv_results, file = "./outputs/cv_results_tree.rds")
+
+
+```
+
+Podemos observar los resultados de nuestro entrenamiento en la siguiente tabla:
+
+```{r}
+#| message: false
+#| warning: false
+#| echo: false
+
+cv_results <- readRDS("./outputs/cv_results_tree.rds")
+
+datatable(cv_results, 
+          rownames = FALSE, 
+          filter = "top",
+          options = list(pageLength = 10, dom = "tip")) |> formatStyle(names(cv_results))
+```
+
+
+
+Podemos ver que el modelo tiene muy buen **acuraccy** y **specificity** ya que la mayoría de nuestros datos son 0's y por tanto los clasificamos muy bien.
+
+El problema de este modelo viene a la hora de clasificar los 1's que es lo que realmente nos interesa; y es que como no hay casi representación de esta clase, métricas como el **AUC** y la **sensibilidad**, son muy malas.
+
+Como se ha mencionado anteriormente, el modelo tiene una distribución de la variable **target** muy desbalanceada, esto nos ha llevado a obtener malos resultados en el modelo por lo que se va a llevar a cabo el empleo de la técnica de oversampling para añadir datos que representen el valor que queremos predecir.
+
+#### Oversampling
+
+El **oversampling** complementar los datos de entrenamiento con múltiples copias de algunas de las clases minoritarias, en nuestro caso añadirá muestras de 1's en la variable **attrition**
+
+Previamente la variable objetivo estaba distribuida de la siguiente forma:
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+attrition_train |> group_by(attrition) |> summarise(n = n(), Porc = round(n()*100.0/nrow(attrition_train),2)) |> 
+ggplot(aes(x = attrition, y = n, fill = attrition)) +
+geom_col(position = "dodge", alpha =0.8) +
+geom_text(aes(label = paste(n," (",Porc,"%)", sep ="")),colour = "black", size = 4,vjust = -0.5, position = position_dodge(.9)) +
+ylim(0,5300)+
+scale_fill_manual(values = c("#023047","#C2185B")) +
+labs(title = "Distribución del target",
+     subtitle = "Reparto de niveles de la variable attrition")+
+theme_minimal()+
+theme(plot.title = element_text(size = 20, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 12),
+      legend.position = "None"
+      )
+```
+
+[**Aplicamos oversampling**]{.hl-bluepastel}
+
+```{r}
+attrition_train_balance <- ovun.sample(attrition ~ .,
+                                    data = attrition_train,
+                                    seed = 200900,
+                                    method = "over")$data
+```
+
+
+Tras aplicar oversampling nuestra variable **attrition** finalmente tiene un reparto de clases balanceado
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| 
+attrition_train_balance |> group_by(attrition) |> summarise(n = n(), Porc = round(n()*100.0/nrow(attrition_train_balance),2)) |> 
+ggplot(aes(x = attrition, y = n, fill = attrition)) +
+geom_col(position = "dodge", alpha =0.8) +
+geom_text(aes(label = paste(n," (",Porc,"%)", sep ="")),colour = "black", size = 4,vjust = -0.5, position = position_dodge(.9)) +
+ylim(0,5300)+
+scale_fill_manual(values = c("#023047","#C2185B")) +
+labs(title = "Distribución del target",
+     subtitle = "Reparto de niveles de la variable attrition")+
+theme_minimal()+
+theme(plot.title = element_text(size = 20, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 12),
+      legend.position = "None"
+      )
+```
+
+#### Entrenamiento con datos balanceados
+
+Antes de comenzar el entrenamiento con los datos balanceados tendremos que generar de nuevo nuestras divisiones de **K-folds** sobre el conjunto de datos modificado.
+
+```{r}
+#| message: false
+#| warning: false
+
+attrition_data_balance_cv <- fold_rep_for_cv(data = attrition_train_balance, folds = 5, reps = 3, target = "attrition", seed = 200900) 
+```
+
+
+Procedemos a entrenar con los datos balanceados aplicando los diferentes grids de hiperparámetros
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| results: false
+#| eval: false
+
+cv_results <-  data.frame(rep          = integer(),
+                           fold         = integer(),
+                           minbucket    = integer(),
+                           cp           = double(),
+                           accuracy     = double(),
+                           kappa        = double(),
+                           sensitivity  = double(),
+                           specificity  = double(),
+                           auc          = double())
+
+
+for (data_fold in attrition_data_balance_cv) 
+{
+    #---------------------------------
+    # Conjuntos de Train y Val
+    #---------------------------------
+    rep_value <- data_fold[["repeat"]]
+    fold_value <- data_fold[["fold"]]
+    train <- data_fold[["train_data"]]
+    val <- data_fold[["validation_data"]]
+    
+    #---------------------------------
+    # Fine tunning con diferentes hiperparámetros
+    #---------------------------------
+    for (bucket in minbucket_list)
+    {
+        for (complexity_parameter in complexity_list)
+        {
+            # ----------------- 
+            #      Modelo
+            # -----------------
+            tree <- rpart(data = train,
+                          attrition ~ .,
+                          control = rpart.control(minbucket = as.integer((bucket*nrow(train))/100), 
+                          cp = complexity_parameter))
+            
+            
+            # Predicciones en Val
+            pred <- predict(tree, newdata = val, type = "class") 
+            # Matriz de confusión
+            conf_mat <- confusionMatrix(pred, val[["attrition"]], positive = "1")
+            # Accuracy
+            accuracy_value <- conf_mat[["overall"]][["Accuracy"]]
+            # Kappa
+            kappa_value <- conf_mat[["overall"]][["Kappa"]]
+            # Sensitivity
+            sensitivity_value <- conf_mat[["byClass"]][["Sensitivity"]]
+            # Specificity
+            specificity_value <- conf_mat[["byClass"]][["Specificity"]]
+            # Curva ROC y AUC
+            pred <- as.data.frame(predict(tree, val, type="prob"))
+            pred$real_class <- as.factor(val[["attrition"]])
+            pred <- pred |>  rename(prob_attrition = "1", prob_none = "0")
+            auc <- pred |>  roc_auc(truth = real_class, prob_attrition)
+            auc_value <- auc |>  pull(.estimate)
+            # ----------------------------------------> Guardamos resultados
+            cv_results[nrow(cv_results) + 1,] <- c( rep_value,
+                                                    fold_value,
+                                                    bucket,
+                                                    complexity_parameter,
+                                                    round(accuracy_value,6),
+                                                    round(kappa_value,6),
+                                                    round(sensitivity_value,6),
+                                                    round(specificity_value,6),
+                                                    round(auc_value,6))
+            # Para mostrar por pantalla lo que  se va ejecutando
+            texto <- paste("Repeat: ",rep_value," - Fold: ",fold_value, " - Minbucket: ",bucket, sep = "" )
+            print(texto)
+            print("-----------------------")
+        #}
+        }
+        
+    }
+         
+}
+# Conversión a formatos correctos
+cv_results$minbucket <- as.double(cv_results$minbucket)
+cv_results$cp <- as.double(cv_results$cp)
+cv_results$accuracy <- as.double(cv_results$accuracy)
+cv_results$kappa <- as.double(cv_results$kappa)
+cv_results$sensitivity <- as.double(cv_results$sensitivity)
+cv_results$specificity <- as.double(cv_results$specificity)
+cv_results$auc <- as.double(cv_results$auc)
+# Variable con nombre modelos
+cv_results <- cv_results |>  mutate(model = paste(minbucket, " - ", cp, sep = ""))
+# Guardamos
+saveRDS(cv_results, file = "./outputs/cv_oversampling_tree.rds")
+```
+
+
+Los resultados de nuestro modelo de árbol de decisión entrenado son los siguientes:
+
+```{r}
+#| message: false
+#| warning: false
+#| echo: false
+
+cv_results <- readRDS("./outputs/cv_oversampling_tree.rds")
+
+datatable(cv_results, 
+          rownames = FALSE, 
+          filter = "top",
+          options = list(pageLength = 10, dom = "tip")) |> formatStyle(names(cv_results))
+```
+
+
+
+Observamos que se ha reducido tanto el accuracy como el specificity en estos nuevos modelos, aun así, gracias a ampliar nuestra muestra de personas que abandonaban la empresa, ahora también predice mejor esta casuística (**sensitivity**) por tanto en general los modelos son más completos y predicen mejor ambas clases, pero sobre todo los positivos que es lo que más nos interesa.
+
+
+Vamos a observar los diferentes resultados de nuestro cross-validation para comparar los modelos en términos de sensibilidad.
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+# Grafico comparativo
+# Group by
+cv_results_group <- cv_results |>   group_by(model) |>  summarise(accuracy = mean(accuracy),
+                                                                 kappa = mean(kappa),
+                                                                 sensitivity = mean(sensitivity),
+                                                                 specificity = mean(specificity),
+                                                                 auc = mean(auc)
+                                                                 ) |>  
+                                    arrange(desc(accuracy)) |>   
+                                    slice_head(n = 10) |>   
+                                    select(model)
+# Cruce con cv_results para filtrar
+cv_results_top <- cv_results |>  inner_join(cv_results_group, by = "model")
+# Grafico comparativo
+cv_results_top |>  ggplot( aes(x=model, y=sensitivity, fill="#e01b63")) +
+               stat_boxplot(geom = "errorbar",
+                           width = 0.25) + 
+               geom_boxplot() +
+               labs( title = "Cross Validation Results",subtitle = "Comparativa (en términos de sensitivity) de los mejores 10 modelos en promedio")+
+               scale_y_continuous(breaks = seq(from = 0.5, to=1, by=0.05))+
+               stat_summary(fun.y=mean, geom="point", shape=23, size=1.5, color="blue", fill="blue") +
+               theme( plot.title   = element_text(size=15, face = "bold" ),
+                      
+                      axis.title.x = element_blank(),
+                      axis.text.x  = element_text(size=12,face = "bold", angle = 90),
+                      axis.title.y = element_blank(),
+                      axis.text.y  = element_text(size=12,face = "bold"),
+                      
+                      legend.position = "None"
+                       )
+```
+
+Vamos a considerar como 🏆 **modelo ganador** 🏆 el primer modelo: **0.5 - 0.001**. 
+
+Este es el mejor modelo porque:
+
+- Tiene la mediana y la media más altas (**~0.94-0.95**).
+
+- Existe poca variabilidad
+
+Por tanto los hiperparámetros de nuestro modelo ganador son **minbucket = 0.5** y **complejidad de poda = 0.001**
+
+#### Modelo ganador
+
+En primer lugar vamos a generar este modelo ganador y vamos a ver también la importancia de las variables en este modelo.
+
+```{r}
+#| message: false
+#| warning: false
+#| 
+best_tree <- rpart(data = attrition_train_balance, 
+                   attrition ~ .,
+                   control = rpart.control(minbucket = as.integer((0.5*nrow(attrition_train_balance))/100), cp = 0.001))
+```
+
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+
+imp <- best_tree$variable.importance
+imp_data <- as.data.frame(imp)
+imp_data <- tibble::rownames_to_column(imp_data, "Variables") |>  arrange(desc(imp))
+imp_data$Variables <- as.factor(imp_data$Variables)
+
+
+imp_data |> mutate(Variables = fct_reorder(Variables, imp)) |>
+ggplot( aes(x=Variables, y=imp)) +
+geom_bar(stat="identity", fill="#37d8d5", width=.7)+
+coord_flip() +
+theme_bw()+
+theme(axis.title.x = element_blank(),
+      axis.text.x  = element_text(size=10,face = "bold"),
+      axis.title.y = element_blank(),
+      axis.text.y  = element_text(size=10,face = "bold"),
+      legend.position = "None"
+      )
+```
+
+Gracias a este gráfico podemos observar cuales serán las variables que potencialmente más vaya a utilizar el árbol, y es que no utiliza todas las variables si no que irá seleccionando las mejores.
+
+Destaca sobre todas las variables la importancia de la variable **overtime**.
+
+### Predicciones en conjunto test
+
+Inicialmente se llevó a cabo una separación entre Train y Test en el conjunto de los datos. Una vez entrenado y obtenido el modelo ganador con los datos de Train, ahora se aplicará este conjunto de Test reservado al modelo ganador para evaluar nuestro modelo y sacar conclusiones de estas predicciones.
+
+```{r}
+pred <- predict(best_tree, newdata = attrition_test, type = "class")
+```
+
+
+#### Matriz de confusión
+
+::: callout-note
+## Apunte sobre el auc
+
+A la hora de calcular el auc, esta métrica nos proporciona los valores inversos por lo que vamos a utilizar la predicción de none en este caso que sería la correspondiente a attrition.
+:::
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+# Matriz de Confusion
+conf_mat <- confusionMatrix(pred, attrition_test$attrition, positive = "1")
+
+# Accuracy
+accuracy <- conf_mat[["overall"]][["Accuracy"]]
+# Sensitivity
+sensitivity <- conf_mat[["byClass"]][["Sensitivity"]]
+# Specificity
+specificity <- conf_mat[["byClass"]][["Specificity"]]
+# AUC
+pred <- as.data.frame(predict(best_tree, attrition_test, type="prob"))
+pred$real_class <- as.factor(attrition_test$attrition)
+pred <- pred |> rename(prob_attrition = "1", prob_none = "0")
+auc <- pred |> roc_auc(truth = real_class, prob_none) 
+
+auc_value <- auc |> pull(.estimate)
+
+statistics <- data.frame (metrics  = c("accuracy","sensitivity","specificity","auc"),
+                          values = c(accuracy,sensitivity,specificity,auc_value)
+                          )
+knitr::kable(statistics , col.names = gsub("[.]", " ", names(statistics)))
+```
+
+
+#### Curva ROC
+
+::: callout-note
+## Apunte sobre el auc en la curva roc
+
+A la hora de realizar los cálculos de la curva roc con el paquete roc_curve, las clases están invertidas por tanto para obtener el cálculo correcto de la curva roc se va a hacer con la probabilidad de no attrition en vez de la probabilidad de un 1. Además, para evidenciar que esto es correcto se va a utilizar otro paquete de curva roc en el que se va a generar este gráfico de forma normal
+:::
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#---------------------------------------------------------------------------------------------------------------------------
+# Prediccions en formato prob
+predicted <- as.data.frame(predict(best_tree, attrition_test, type="prob"))
+# Unión de etiqueta real
+predicted$real_class <- as.factor(attrition_test$attrition)
+# Rename
+predicted <- predicted |>  rename(prob_attrition = "1", prob_none = "0")
+#----------------------------------------------------------------------------------------------------------
+# Curva ROC: etiqueta real vs probabilid de 0. (Se invierte la clase)
+roc_curve <- predicted |> roc_curve(truth = real_class, prob_none)
+
+# Área debajo de la curva.
+auc <- predicted |>  roc_auc(truth = real_class, prob_none)
+auc <- auc |>  pull(.estimate)
+
+# Curva ROC con otro paquete para comprobar que está mal calculada hasta el momento
+# Calculate ROC curve
+roc_curve2 <- roc(predicted$real_class, predicted$prob_attrition)
+
+#---------------------------------------------------------------------------------------------------------------------------
+# Gráfico Curva ROC- (con paquete habitual)
+ggplot(roc_curve, aes(x = 1 - specificity, y = sensitivity)) +
+  #scale_x_reverse() +
+# Línea de tamaño 2, color azul y transparencia 0.85
+geom_line(lwd = 1, alpha = 0.85, color = "#e01b63") +
+# Añadimos diagonal de línea tipo 4
+geom_abline(lty = "dashed") +
+# Hacemos el gráfico cuadrado
+coord_equal() +
+# Etiquetas
+labs(x = "1 - Specificity",
+     y = "Sensitivity",
+     title = "CURVA ROC (ggplot - roc_curve)",
+     subtitle = glue("AUC = {round(auc, 3)}"))+
+theme_minimal() +
+# Tema
+theme(axis.title.y = element_text(face="bold"),
+      axis.title.x = element_text(face="bold"),
+      plot.title = element_text(size =12,face="bold"),
+      plot.subtitle = element_text(size  =10))
+
+plot(roc_curve2, 
+     col = "#37d8d5",
+     lwd = 2,
+     legacy.axes = TRUE, 
+     main = "CURVA ROC (plot - roc)",
+     xlab = "1 - Specificity",
+     ylab = "Sensitivity",
+     print.auc = TRUE,
+     font.main = 2,
+     font.lab = 2)
+```
+
+
+En cuanto a nuestro modelo de árbol de decisión podemos decir que tiene una buena precisión, con un **83.03%** de **accuracy**, lo que indica que acierta en la mayoría de los casos. La **sensibilidad** ha mejorado notablemente respecto a la que se veía en el primer modelo, alcanzando **67.5%**, lo que refleja una mejor capacidad para detectar empleados que dejarán la empresa (ha empeorado en el conjunto de test pero esto es algo normal). El valor de **specificity** es alto (**85.14%**), lo que sugiere que el modelo identifica correctamente a aquellos empleados que no se van. Finalmente, el **AUC** de **0.7762** demuestra una capacidad razonable para distinguir entre las dos clases.
+
+
+## KNN K-Nearest Neighbors
+
+### Teoría del modelo
+
+### Librerías necesarias
+
+```{r}
+#| message: false
+#| warning: false
+#| 
+# Borramos variables del environment
+rm(list = ls())
+library(tidyverse)  # Depuración datos
+library(skimr)      # Resumen numérico
+library(ggplot2)    # Gráficos
+library(tidymodels) # Modelos
+library(rpart)      # CART
+library(rpart.plot) # Graficar árbol
+library(caret)      # Matriz de Confusion
+library(glue)       # pegar texto + variables fácilmente
+library(DT)         # Para mostrar tabla (formatStyle)
+library(ROSE)       # Para Oversampling
+library(outliers)   # Para funcion scores (receta)
+library(lubridate)  # Fechas
+library(timeDate)   # Festivos (receta)
+library(hrbrthemes) # Tema ggplot
+library(corrplot)   # Plot m.correl
+library(kknn)       # ajuste knn
+library(themis)     # Oversampling
+```
+
+
+### Datos iniciales
+
+En primer lugar se importan los datos que han sido depurados previamente.
+
+```{r}
+#| code-fold: false
+#| message: false
+#| warning: false
+
+attrition_data <- readRDS("./data/attrition_data.rds")
+```
+
+
+### Train y test
+
+Al igual que en el modelo de los árboles de decisión, en **KNN** también tenemos que realizar la división de los datos. **80%** de los datos formarán parte del conjunto de entrenamiento (**Train**) y el **20%** restante formarán el conjunto de **Test**.
+
+
+```{r}
+#| code-fold: false
+#| message: false
+#| warning: false
+#| 
+set.seed(200900)
+
+attrition_split <- initial_split(attrition_data, strata = attrition, prop = 0.80)
+
+# Train
+attrition_train <- training(attrition_split)
+# Reparto en Train
+attrition_train |> group_by(attrition) |> summarise(n = n()) |> mutate(prop = n /sum(n))
+
+# Test
+attrition_test <- testing(attrition_split)
+# Reparto en test
+attrition_test |> group_by(attrition) |> summarise(n = n()) |> mutate(prop = n /sum(n))
+```
+
+### Receta 
+
+La **receta** es una serie de instrucciones que nos permite llevar a cabo diferentes **transformaciones en los datos**. Algunas de estas transformaciones son la asignación de roles; la recategorización de variables; el tratamiento de valores extremos o nulos; la estandarización de los datos por rango y/o normalización etc.
+
+Es un proceso equivalente en muchos casos a la depuración de los datos que se ha hecho previamente, por lo que la receta que se va a desarrollar está orientada a unos datos que ya han sido tratados.
+
+La receta que se construye **prepara los datos para predecir la variable attrition**, eliminando el identificador del conjunto de datos a la hora del modelado y el bake final, también **agrupa categorías poco frecuentes**, **limpia variables redundantes o sin variación**, **escala valores numéricos**, **convierte categóricos a dummies** y aplica oversampling para **balancear la variable objetivo** (attrition).
+
+```{r}
+#| warning: false
+#| message: false
+# Receta completa
+attrition_recipe <-
+  # Fórmula y datos
+  recipe(data = attrition_train, attrition ~ .) |> 
+  # Roles/borrado de la variable
+  update_role(employeeid, new_role = "ID") |> update_role_requirements(role = "ID", bake = FALSE) |> 
+  # Categoria Other 
+  step_other(all_nominal_predictors(), threshold = 0.005) |>
+  # Filtro de correlación
+  step_corr(all_numeric_predictors(), threshold = 0.95) |>
+  # Filtro 0 varianza
+  step_zv(all_predictors()) |>
+  # Min / Max
+  step_range(all_numeric_predictors(), min = 0, max = 1) |>
+  # nominales las pasemos a dummy 1/0
+  step_dummy(all_nominal_predictors(), -all_outcomes()) |>
+  # Oversampling
+  step_upsample(attrition, over_ratio = 1)
+```
+
+
+Tras **aplicar la receta a los datos**, estos quedan de la siguiente forma:
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+
+attrition_train_baked <- bake(attrition_recipe |> prep(), new_data = NULL)
+
+datatable(attrition_train_baked, rownames = FALSE, filter = "top",options = list(pageLength = 10)) |> formatStyle(names(attrition_train_baked), lineHeight = "65%")
+```
+
+Observamos como ahora nuestras **variables numéricas** quedan bien representadas con **valores entre 0 y 1** (necesario para KNN) y también como se han creado algunas variables dummies.
+
+Finalmente, al aplicar oversampling al conjunto de datos nuestra variable objetivo ha quedado distribuida de la siguiente forma:
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+attrition_train_baked |> group_by(attrition) |> summarise(n = n(), Porc = round(n()*100.0/nrow(attrition_train_baked),2)) |> 
+ggplot(aes(x = attrition, y = n, fill = attrition)) +
+geom_col(position = "dodge", alpha =0.8) +
+ylim(c(0, 2600)) +
+geom_text(aes(label = paste(n," (",Porc,"%)", sep ="")),colour = "black", size = 4,vjust = -0.5, position = position_dodge(.9)) +
+scale_fill_manual(values = c("#023047","#C2185B")) +
+theme_minimal()+
+theme(plot.title = element_text(size = 20, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 12),
+      legend.position = "None"
+      )
+```
+
+Por lo que ya tenemos una distribución correcta de los datos con la que trabajar
+
+### K-Fold cross validation
+
+Inicialmente indicamos el numero de particiones y las repeticiones que haremos para hacer el cross-validation
+
+```{r}
+set.seed(200900)
+
+folds <- vfold_cv(attrition_train, v = 5, strata = attrition, repeats = 3)
+```
+
+Después se crea el modelo sin ningún tipo de parámetros fijo
+
+```{r}
+knn_model <- nearest_neighbor(mode = "classification",
+                              neighbors = tune("k"),
+                              weight_func = tune("weight"),
+                              dist_power = tune("dist")) |>
+             set_engine("kknn")
+```
+
+Una vez hecha la validación cruzada y creado el modelo ya se puede empezar a crear el flujo de trabajo
+
+```{r}
+attrition_wflow <- workflow() |> add_recipe(attrition_recipe) |> add_model(knn_model)
+```
+
+
+#### Grid de hiperparámetros
+
+A la hora de entrenar el modelo se utilizan distintos hiperparámetros. Se va a crear un grid con los diferentes valores que pueden tomar estos hiperparámetros para después evaluar cual es el mejor modelo y con que valores lo hemos obtenido.
+
+- En primer lugar vamos a definir el número de vecinos, tomará valores desde 100 hasta 500 de 100 en 100.
+
+- Definiremos también la función que va a emplear el kernel para promediar el peso
+    - **Inv**: Promedio por el inverso de la distancia.
+    - **Gaussian**: Promedio según los puntos más cercanos al centro.
+    - **Epanechnikov**: Proporciona eficiencia y rendimiento.
+    - **Biweight**: Ignora a los vecinos mas alejados.
+    
+- Parámetro dist, que decide el tipo de distancia, variable entre 1 y 2 (distancia Manhattan y Euclídea, respectivamente)
+
+Tendremos inicialmente 40 posibles modelos.
+
+```{r}
+#| message: false
+#| warning: false
+grid_knn <- expand_grid(k = seq(100, 500, by = 100),
+                        weight = c("inv","gaussian","epanechnikov","biweight"),
+                        dist = c(1, 2))
+```
+
+
+```{r}
+#| message: false
+#| warning: false
+#| echo: false
+datatable(grid_knn, 
+          rownames = FALSE, 
+          filter = "top",
+          options = list(pageLength = 10, dom = "tip")) |> formatStyle(names(grid_knn))
+```
+
+
+### Entrenamiento 
+
+La receta ha sido creada, también se han definido las particiones entre train y test, el modelo se ha generado sin parámetros y se ha generado el grid de hiperparámetros que se aplicará.
+
+Como resultado de esto tenemos inicialmente 40 modelos que tras aplicar cross validation, nos queda en 40x3x5 = 600 modelos jej 🫠🫠
+
+
+```{r}
+#| message: false
+#| warning: false
+#| eval: false
+# Tiempo de ejecución: 
+attrition_knn_fit_tune <- attrition_wflow |> 
+                       tune_grid(resamples = folds, 
+                                 grid = grid_knn,
+                                 control = control_grid(verbose = TRUE),
+                                 metrics = metric_set(accuracy, sens, spec, roc_auc))
+# Guardo resultados
+saveRDS(attrition_knn_fit_tune, file = "./outputs/attrition_knn_fit_tune.rds")
+```
+
+
+```{r}
+#| message: false
+#| warning: false
+# Cargamos los datos obtenidos
+attrition_knn_fit_tune <- readRDS("./outputs/attrition_knn_fit_tune.rds")
+
+# Métricas tratadas en cv_results 
+attrition_cv_results <- attrition_knn_fit_tune |> collect_metrics(summarize = FALSE) |> 
+              select(rep = id, fold = id2, k, weight, dist , metric = .metric, value = .estimate ) |>  
+              pivot_wider(names_from = metric, values_from = value) |>
+              mutate(model = as.factor(paste(k," - ",weight," - ", dist, sep =""))) |>
+              arrange(desc(accuracy))
+```
+
+```{r}
+#| message: false
+#| warning: false
+#| echo: false
+datatable(cv_results, 
+          rownames = FALSE, 
+          filter = "top",
+          options = list(pageLength = 10, dom = "tip")) |> formatStyle(names(attrition_cv_results))
+```
 
