@@ -3063,7 +3063,6 @@ library(themis)     # Oversampling
 En primer lugar se importan los datos que han sido depurados previamente.
 
 ```{r}
-#| code-fold: false
 #| message: false
 #| warning: false
 
@@ -3454,17 +3453,17 @@ roc_curve <- rbind(roc_curve_knn,roc_curve_tree)
 #| warning: false
 #| echo: false
 
-# Matriz de Confusión (Métricas)
-datatable(statistics|> arrange(metrics, values, model), rownames = FALSE, filter = "top",options = list(pageLength = 2)) |> formatStyle(names(statistics), lineHeight = "65%")
+# Metricas de la matriz de confusión
+datatable(statistics |> arrange(metrics, values, model), rownames = FALSE, filter = "top",options = list(pageLength = 2)) |> formatStyle(names(statistics), lineHeight = "65%")
 ```
 
 ```{r}
 #| message: false
 #| warning: false
-#| echo: false
+#| code-fold: true
 statistics |> ggplot(aes(x = metrics , y= values, fill = model)) +
                geom_bar( alpha = 0.85, position = "dodge", stat = "identity") +
-               scale_fill_manual(values = c("Árbol" = "#84b6f4", "KNN" = "#ffca99", "Red Neuronal" = "#a2c8cc", "SVM Lineal" = "#ff8097", "SVM Poli" = "#623CEA", "Ensamblado" = "#483A58")) +
+               scale_fill_manual(values = c("Árbol" = "darkslategray1", "KNN" = "indianred1", "Red Neuronal" = "coral", "SVM Lineal" = "pink", "SVM Polinomial" = "darkgoldenrod1", "Ensamblado" = "darkslategray")) +
                labs(#x = "métrica", 
                     #y = "frecuencia absoluta", 
                     title = "Comparativa Modelos",
@@ -3481,7 +3480,7 @@ statistics |> ggplot(aes(x = metrics , y= values, fill = model)) +
 ```{r}
 #| message: false
 #| warning: false
-#| echo: false
+#| code-fold: true
 
 # Gráfico Curva ROC
 ggplot(roc_curve, aes(x = 1 - specificity, y = sensitivity, colour=model)) +
@@ -3492,7 +3491,7 @@ geom_abline(lty = "dashed") +
 # Hacemos el gráfico cuadrado
 coord_equal() +
 # Color
-scale_colour_manual(values = c("Árbol" = "#84b6f4", "KNN" = "#ffca99", "Red Neuronal" = "#a2c8cc", "SVM Lineal" = "#ff8097", "SVM Poli" = "#623CEA", "Ensamblado" = "#483A58")) +
+scale_colour_manual(values = c("Árbol" = "darkslategray1", "KNN" = "indianred1", "Red Neuronal" = "coral", "SVM Lineal" = "pink", "SVM Polinomial" = "darkgoldenrod1", "Ensamblado" = "darkslategray")) +
 # Etiquetas
 labs(x = "1 - Specificity",
      y = "Sensitivity",
@@ -3506,3 +3505,1026 @@ theme_minimal()+
       plot.subtitle = element_text(size  =10))
 ```
 
+
+## SVM Support vector machine - Kernel lineal
+
+### Paquetes necesarios
+
+```{r}
+#| message: false
+#| warning: false
+
+rm(list = ls())
+library(tidyverse)  # Depuración datos
+library(skimr)      # Resumen numérico
+library(ggplot2)    # Gráficos
+library(tidymodels) # Modelos
+library(rpart)      # CART
+library(rpart.plot) # Graficar árbol
+library(caret)      # Matriz de Confusion
+library(glue)       # pegar texto + variables fácilmente
+library(DT)         # Para mostrar tabla (formatStyle)
+library(ROSE)       # Para Oversampling
+library(outliers)   # Para funcion scores (receta)
+library(lubridate)  # Fechas
+library(timeDate)   # Festivos (receta)
+library(hrbrthemes) # Tema ggplot
+library(corrplot)   # Plot m.correl
+library(kknn)       # ajuste knn
+library(themis)     # Oversampling
+library(e1071)      # SVM
+```
+
+
+### Datos iniciales
+
+```{r}
+#| message: false
+#| warning: false
+
+attrition_data <- readRDS("./data/attrition_data.rds")
+```
+
+En el caso de SVM de Kernel lineal eliminaremos el ID
+
+```{r}
+#| message: false
+#| warning: false
+
+attrition_data <- attrition_data |> select(-employeeid)
+```
+
+Originalmente nuestra variable attrition que es la variable objetivo está distribuida de la siguiente forma:
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+#| 
+attrition_data |> group_by(attrition) |> summarise(n = n(), Porc = round(n()*100.0/nrow(attrition_data),2)) |> 
+ggplot(aes(x = attrition, y = n, fill = attrition)) +
+geom_col(position = "dodge", alpha =0.8) +
+geom_text(aes(label = paste(n," (",Porc,"%)", sep ="")),colour = "black", size = 4,vjust = -0.5, position = position_dodge(.9)) +
+ylim(0,5300)+
+scale_fill_manual(values = c("#023047","#C2185B")) +
+labs(title = "Distribución del target",
+     subtitle = "Reparto de niveles de la variable attrition")+
+theme_minimal()+
+theme(plot.title = element_text(size = 20, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 12),
+      legend.position = "None"
+      )
+```
+
+
+
+### Train y test
+
+Realizamos la partición de nuestro conjunto de datos en **80% train** y **20% test**
+
+```{r}
+#| warning: false
+#| message: false
+# Semilla
+set.seed(200900)
+# Partición 20% de test
+attrition_split <- initial_split(attrition_data, strata = attrition, prop = 0.80)
+# Train
+attrition_train <- training(attrition_split)
+# Test
+attrition_test <- testing(attrition_split)
+```
+
+### Preparación de los datos
+
+#### Receta
+
+En el caso de esta receta no vamos a modificar el rol del ID debido a que lo hemos borrado en pasos anteriores, pero el resto de receta si que se va a mantener para SVM ya que necesitamos disponer de variables numéricas así como de modificar la frecuencia de nuestra variable target en el conjunto de datos.
+
+```{r}
+#| warning: false
+#| message: false
+# Receta completa
+attrition_recipe <-
+  # Fórmula y datos
+  recipe(data = attrition_train, attrition ~ .) |>
+  # Categoria Other 
+  step_other(all_nominal_predictors(), threshold = 0.005) |>
+  # Filtro de correlación
+  step_corr(all_numeric_predictors(), threshold = 0.95) |>
+  # Filtro 0 varianza
+  step_zv(all_predictors()) |>
+  # Min / Max
+  step_range(all_numeric_predictors(), min = 0, max = 1) |>
+  # nominales las pasemos a dummy 1/0
+  step_dummy(all_nominal_predictors(), -all_outcomes()) |>
+  # Oversampling
+  step_upsample(attrition, over_ratio = 1)
+```
+
+Esta receta se va a aplicar a ambas particiones del conjunto de datos que hemos hecho en el paso anterior:
+
+```{r}
+#| message: false
+#| warning: false
+
+attrition_train_baked <- bake(attrition_recipe |> prep(), new_data = NULL)
+
+attrition_test_baked <- bake(attrition_recipe |> prep(), new_data = attrition_test)
+```
+
+Tras haber aplicado nuestra receta al conjunto de los datos este queda de la siguiente forma:
+
+```{r}
+#| message: false
+#| warning: false
+#| echo: false
+#  Mostrar tabla con filtros
+datatable(attrition_train_baked, rownames = FALSE, filter = "top",options = list(pageLength = 10)) |> formatStyle(names(attrition_train_baked), lineHeight = "65%")
+```
+
+Y la variable attrition ahora está distribuida de la siguiente manera:
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+#| 
+attrition_train_baked |> group_by(attrition) |> summarise(n = n(), Porc = round(n()*100.0/nrow(attrition_train_baked),2)) |> 
+ggplot(aes(x = attrition, y = n, fill = attrition)) +
+geom_col(position = "dodge", alpha =0.8) +
+geom_text(aes(label = paste(n," (",Porc,"%)", sep ="")),colour = "black", size = 4,vjust = -0.5, position = position_dodge(.9)) +
+ylim(0,5300)+
+scale_fill_manual(values = c("#023047","#C2185B")) +
+labs(title = "Distribución del target",
+     subtitle = "Reparto de niveles de la variable attrition")+
+theme_minimal()+
+theme(plot.title = element_text(size = 20, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 12),
+      legend.position = "None"
+      )
+```
+
+### K-Fold cross validation
+
+Utilizaremos de nuevo la función proporcionada en la asignatura de aprendizaje automático para poder realizar este cross validation sobre nuestros datos de entrenamiento.
+
+Se van a realizar 5 divisiones y 3 repeticiones por tanto van a haber 15 pares de conjunto de entrenamiento y validación.
+
+```{r}
+#| message: false
+#| warning: false
+
+source("./funciones/utils.r")
+
+attrition_train_data_cv <- fold_rep_for_cv(data = attrition_train_baked, folds = 5, reps = 3, target = "attrition", seed = 200900) 
+```
+
+### Hiperparámetros en SVM lineal
+
+Como estamos creando un modelo de SVM con kernel lineal, únicamente vamos a tener como hiperparámetro el coste C para la regularización. Se va a construir un grid que contenga diferentes valores para este hiperparámetro:
+
+```{r}
+#| message: false
+#| warning: false
+
+svm_cost_list <- c(0.01,0.05,0.1,0.2,0.5,1,2,5,10)
+
+```
+
+### Entrenamiento
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+#| eval: false
+
+# Tabla para guardar los resultados del cross validation
+cv_results <-  data.frame(rep          = character(),
+                           fold         = character(),
+                           cost         = double(),
+                           accuracy     = double(),
+                           sensitivity  = double(),
+                           specificity  = double(),
+                           auc          = double())
+
+for (data_fold in attrition_train_data_cv)
+{
+    #---------------------------------
+    # Conjuntos de Train y Val
+    #---------------------------------
+    rep_value <- data_fold[["repeat"]]
+    fold_value <- data_fold[["fold"]]
+    train <- data_fold[["train_data"]]
+    val <- data_fold[["validation_data"]]
+    #---------------------------------
+    # Tuneado SVM lineal
+    #---------------------------------
+    for (cost_value in svm_cost_list)
+    {
+            # ---------------------------------
+            #           SVM model
+            # --------------------------------
+            svm_model <- svm(data=train,
+                             kernel = "linear",
+                             attrition ~ .,
+                             probability = TRUE,
+                             cost = cost_value)
+            # Predicciones en Val
+            pred <- predict(svm_model, newdata = val, type = "class") 
+            # Matriz de confusión
+            conf_mat <- confusionMatrix(pred, val[["attrition"]], positive = "1")
+            # Accuracy
+            accuracy_value <- conf_mat[["overall"]][["Accuracy"]]
+            # Sensitivity
+            sensitivity_value <- conf_mat[["byClass"]][["Sensitivity"]]
+            # Specificity
+            specificity_value <- conf_mat[["byClass"]][["Specificity"]]
+            # Curva ROC y AUC
+            pred <- predict(svm_model,newdata = val, probability=TRUE)
+            pred <- as.data.frame(attr(pred, "prob"))
+            pred$real_class <- as.factor(val[["attrition"]])
+            auc <- pred |>  roc_auc(truth = real_class, "0")
+            auc_value <- auc |> pull(.estimate)
+            # --------------------- 
+            # Guardamos resultados
+            # ---------------------
+            cv_results[nrow(cv_results) + 1,] <- c( rep_value,
+                                                    fold_value,
+                                                    cost_value,
+                                                    round(accuracy_value,6),
+                                                    round(sensitivity_value,6),
+                                                    round(specificity_value,6),
+                                                    round(auc_value,6))
+            # Para mostrar por pantalla lo que  se va ejecutando
+            texto <- paste("Repeat: ",rep_value," - Fold: ",fold_value, " - Cost: ",cost_value, sep = ""  )
+            print(texto)
+            print("-----------------------")
+    }
+}
+# Conversión a formatos correctos
+cv_results$cost <- as.factor(cv_results$cost)
+cv_results$accuracy <- as.double(cv_results$accuracy)
+cv_results$sensitivity <- as.double(cv_results$sensitivity)
+cv_results$specificity <- as.double(cv_results$specificity)
+cv_results$auc <- as.double(cv_results$auc)
+
+# Guardamos
+saveRDS(cv_results, file = "./outputs/cv_svm_linear_results.rds")
+```
+
+Los resultados de nuestro entrenamiento son los siguientes:
+
+```{r}
+#| message: false
+#| warning: false
+#| echo: false
+
+cv_results <- readRDS("./outputs/cv_svm_linear_results.rds")
+
+datatable(cv_results, rownames = FALSE, filter = "top",options = list(pageLength = 10)) |> formatStyle(names(cv_results), lineHeight = "65%")
+```
+
+Graficamos los resultados de nuestro entrenamiento de modelos. Para ello vamos a agrupar cada modelo según el parámetro de coste para la regularización y calcularemos las métricas a partir de la media de las distintas iteraciones.
+
+```{r}
+#| message: false
+#| warning: false
+#| echo: false
+cv_results |> ggplot( aes(x=cost, y=sensitivity)) +
+stat_boxplot(geom = "errorbar",width = 0.25) + 
+geom_boxplot( fill = "#e11b63") +
+labs( title = "Cross Validation Results",
+      subtitle = "Comparativa (en términos de sensitivity) de los modelos")+
+scale_y_continuous(breaks = seq(from = 0.2, to=1, by=0.02))+
+stat_summary(fun=mean, geom="point", shape=23, size=1.5, color="black", fill="black") +
+theme_minimal()+
+theme(plot.title= element_text(size=15, face = "bold" ),
+      axis.title.x = element_blank(),
+      axis.text.x  = element_text(size=10,face = "bold", angle = 90),
+      axis.title.y = element_blank(),
+      axis.text.y  = element_text(size=10,face = "bold"),
+      legend.position = "None"
+      )
+```
+
+Vamos a elegir como 🏆 **modelo ganador** 🏆 el que utiliza **0.5** como parámetro de **coste para la regularización**. Observamos que tiene valores bastante similares a los de 10 y 5 pero el que hemos elegido como ganador tiene algo menos de dispersión.
+
+### Modelo ganador
+
+Generamos el modelo ganador pasando el valor concreto de nuestro hiperparámetro:
+
+```{r}
+#| message: false
+#| warning: false
+
+best_svm_lin <- svm(data=attrition_train_baked,
+                     kernel = "linear",
+                     attrition ~ .,
+                     probability = TRUE,
+                     cost = 0.5)
+```
+
+
+### Predicciones en conjunto de test
+
+Se va a aplicar el **SVM** al conjunto de test que se guardó al inicio:
+
+```{r}
+#| message: false
+#| warning: false
+
+attrition_pred <- predict(best_svm_lin, newdata = attrition_test_baked, type = "class")
+saveRDS(attrition_pred, file = "./outputs/svm_lin_preds.rds")
+```
+
+#### Matriz de confusión
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+
+# Matriz de confusión
+conf_mat <- confusionMatrix(attrition_pred, attrition_test_baked[["attrition"]], positive = "1")
+# Accuracy
+accuracy_value <- conf_mat[["overall"]][["Accuracy"]]
+# Sensitivity
+sensitivity_value <- conf_mat[["byClass"]][["Sensitivity"]]
+# Specificity
+specificity_value <- conf_mat[["byClass"]][["Specificity"]]
+# AUC
+attrition_pred <- predict(best_svm_lin,newdata = attrition_test_baked, probability=TRUE)
+attrition_pred <- as.data.frame(attr(attrition_pred, "prob"))
+attrition_pred$real_class <- as.factor(attrition_test_baked[["attrition"]])
+
+auc <- attrition_pred |>  roc_auc(truth = real_class, "0")
+auc_value <- auc |> pull(.estimate)
+
+statistics <- data.frame(metrics  = c("accuracy","sensitivity","specificity","auc"),
+                          values = c(accuracy_value,sensitivity_value,specificity_value,auc_value)
+                          )
+knitr::kable(statistics , col.names = gsub("[.]", " ", names(statistics)))
+```
+
+#### Curva ROC y AUC
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+
+roc_curve_svm <- attrition_pred |> roc_curve(truth = real_class, "0")
+
+#---------------------------
+#   Gráfico Curva ROC
+# --------------------------
+ggplot(roc_curve_svm, aes(x = 1 - specificity, y = sensitivity)) +
+geom_line(lwd = 1, alpha = 0.85, color = "#e01b63") +
+geom_abline(lty = "dashed") +
+coord_equal() +
+labs(x = "1 - Specificity",
+     y = "Sensitivity",
+     title = "CURVA ROC",
+     subtitle = glue("AUC = {round(auc_value, 3)}"))+
+theme_minimal()+
+theme(axis.title.y = element_text(face="bold"),
+      axis.title.x = element_text(face="bold"),
+      plot.title = element_text(size =15,face="bold"),
+      plot.subtitle = element_text(size  =10))
+```
+
+### ¿Cómo vamos?
+
+```{r}
+#| message: false
+#| warning: false
+#| echo: false
+#| 
+saveRDS(attrition_pred, file = "./outputs/svm_lin_predicted.rds")
+saveRDS(statistics, file = "./outputs/svm_lin_stats.rds")
+saveRDS(roc_curve_svm, file = "./outputs/svm_lin_roc_auc.rds")
+
+svm_lin_stats <- readRDS("./outputs/svm_lin_stats.rds")
+svm_lin_stats$model <- "SVM Lineal"
+
+svm_lin_roc_curve <- readRDS("./outputs/svm_lin_roc_auc.rds")
+svm_lin_roc_curve$model <- "SVM Lineal"
+
+knn_stats <- readRDS("./outputs/knn_stats.rds")
+knn_stats$model <- "KNN"
+
+knn_roc_curve <- readRDS("./outputs/knn_roc_auc.rds")
+knn_roc_curve$model <- "KNN"
+
+tree_stats <- readRDS("./outputs/tree_stats.rds")
+tree_stats$model <- "Árbol"
+
+tree_roc_curve <- readRDS("./outputs/tree_roc_auc.rds")
+tree_roc_curve$model <- "Árbol"
+
+model_stats <- rbind(svm_lin_stats, knn_stats, tree_stats)
+model_roc_curve <- rbind(svm_lin_roc_curve, knn_roc_curve, tree_roc_curve)
+```
+
+
+```{r}
+#| message: false
+#| warning: false
+#| echo: false
+
+# Matriz de Confusión (Métricas)
+datatable(model_stats |> arrange(metrics, values, model), rownames = FALSE, filter = "top",options = list(pageLength = 3)) |> formatStyle(names(statistics), lineHeight = "65%")
+
+model_stats |> ggplot(aes(x = metrics , y= values, fill = model)) +
+               geom_bar( alpha = 0.85, position = "dodge", stat = "identity") +
+               scale_fill_manual(values = c("Árbol" = "darkslategray1", "KNN" = "indianred1", "Red Neuronal" = "coral", "SVM Lineal" = "pink", "SVM Polinomial" = "darkgoldenrod1", "Ensamblado" = "darkslategray")) +
+               labs(title = "Comparativa Modelos",
+                    subtitle = "Resultados de las métricas para cada modelo empleado")+
+                theme_minimal()+
+                theme(axis.title.y = element_blank(),
+                      axis.title.x = element_blank(),
+                      axis.text.x = element_text(size = 12,face = "bold"),
+                      plot.title = element_text(size =15,face="bold"),
+                      plot.subtitle = element_text(size  =10))
+
+
+
+# Gráfico Curva ROC
+ggplot(model_roc_curve, aes(x = 1 - specificity, y = sensitivity, colour=model)) +
+geom_line(lwd = 1, alpha = 0.85) +
+geom_abline(lty = "dashed") +
+coord_equal() +
+scale_colour_manual(values = c("Árbol" = "darkslategray1", "KNN" = "indianred1", "Red Neuronal" = "coral", "SVM Lineal" = "pink", "SVM Polinomial" = "darkgoldenrod1", "Ensamblado" = "darkslategray")) +
+labs(x = "1 - Specificity",
+     y = "Sensitivity",
+     title = "Comparativa Modelos",
+     subtitle = "Curva ROC (test) de cada modelo empleado")+
+theme_minimal()+
+  theme(axis.title.y = element_text(face="bold"),
+      axis.title.x = element_text(face="bold"),
+      plot.title = element_text(size =15,face="bold"),
+      plot.subtitle = element_text(size  =10))
+```
+
+
+## SVM Support vector machine - Kernel polinomial
+
+En este modelo de support vector machine con un kernel polinomial podemos reutilizar diferentes partes de nuestro modelo de kernel lineal.
+
+Se van a reutilizar los siguientes apartados:
+
+- **Paquetes necesarios**
+- **Datos iniciales**
+- **Train y test**
+- **Preparacion de los datos**
+- **K-Fold cross validation**
+
+### Hiperparámetros en SVM - Kernel polinomial
+
+Según la propia definición del kernel polinomial podemos encontrar múltiples variables en la ecuación que lo define. Estas variables van a representar los hiperparámetros que va a recibir el modelo a parte del coste para la regularización que ya existía en el kernel lineal.
+
+- **El grado del polinomio**: Usaremos grado 2 debido a que a partir de este grado aparece sobreajuste y se vuelve computacionalmente costoso.
+
+- **Gamma**
+
+- **Coef0**
+
+El grid de estos hiperparámetros es pequeño debido a las características de los parámetros y de nuestros datos.
+
+Cuando los valores de coef0 se reducen mucho o aparecen grandes grids con valores de coste más altos, se produce sobreajuste en el modelo. Estos resultados de sobreajuste se basan en obtener un 1 en la sensibilidad de train , es decir que clasifica perfecto los valores de attrition en los datos de entrenamiento y un 0.5 en test, que denota que es igual que predecirlo al azar.
+
+```{r}
+#| message: false
+#| warning: false
+#| 
+svm_cost_list <- c(0.01, 0.05, 0.1, 0.2)
+svm_gamma_list <- c(0.01, 0.05, 0.1)
+svm_coef0_list <- c(0.5, 0.75, 1)
+degree_value <- 2
+```
+
+### Entrenamiento
+
+Ahora sí con el grid de hiperparámetros definido y reutilizando los datos del modelo previo de SVM con Kernel lineal, estamos listos para entrenar nuestro nuevo modelo de SVM con Kernel polinomial
+
+```{r}
+#| message: false
+#| warning: false
+#| eval: false
+#| code-fold: true
+
+# Tabla donde almacenaremos resultados CV
+cv_results <-  data.frame(rep          = character(),
+                           fold         = character(),
+                           degree       = double(),                            
+                           cost         = double(),
+                           gamma        = double(),
+                           coef0        = double(),
+                           accuracy     = double(),
+                           sensitivity  = double(),
+                           specificity  = double(),
+                           auc          = double())
+
+for (data_fold in attrition_train_data_cv) 
+{
+    #---------------------------------
+    #    Conjuntos de Train y Val
+    #---------------------------------
+    rep_value <- data_fold[["repeat"]]
+    fold_value <- data_fold[["fold"]]
+    train <- data_fold[["train_data"]]
+    val <- data_fold[["validation_data"]]
+    #---------------------------------
+    # Tuneado Arbol
+    #---------------------------------
+    for (cost_value in svm_cost_list)
+    {
+      for (gamma_value in svm_gamma_list)
+      {
+        for (coef0_value in svm_coef0_list)
+        {
+            # --------------------------
+            #     SVM polinomial
+            # --------------------------
+            svm_model <- svm(data=train,
+                                  kernel = "polynomial",
+                                  attrition ~ .,
+                                  probability = TRUE,
+                                  cost = cost_value,
+                                  gamma = gamma_value,
+                                  coef0 = coef0_value,
+                                  degree = degree_value
+                              )
+            # Predicciones en Val
+            pred <- predict(svm_model, newdata = val, type = "class") 
+            # Matriz de confusión
+            conf_mat <- confusionMatrix(pred, val[["attrition"]], positive = "1")
+            # Accuracy
+            accuracy_value <- conf_mat[["overall"]][["Accuracy"]]
+            # Sensitivity
+            sensitivity_value <- conf_mat[["byClass"]][["Sensitivity"]]
+            # Specificity
+            specificity_value <- conf_mat[["byClass"]][["Specificity"]]
+            # Curva ROC y AUC
+            pred <- predict(svm_model,newdata = val, probability=TRUE)
+            pred <- as.data.frame(attr(pred, "prob"))
+            pred$real_class <- as.factor(val[["attrition"]])
+            auc <- pred |>  roc_auc(truth = real_class, `0`)
+            auc_value <- auc |> pull(.estimate)
+            # --------------------
+            # Guardamos resultados
+            # --------------------
+            cv_results[nrow(cv_results) + 1,] <- c( rep_value,
+                                                    fold_value,
+                                                    degree_value,
+                                                    cost_value,
+                                                    gamma_value,
+                                                    coef0_value,
+                                                    round(accuracy_value,6),
+                                                    round(sensitivity_value,6),
+                                                    round(specificity_value,6),
+                                                    round(auc_value,6))
+            # Para mostrar por pantalla lo que  se va ejecutando
+            texto <- paste("Repeat: ",rep_value,
+                           " - Fold: ",fold_value,
+                           " - Degree: ",degree_value,
+                           " - Cost: ",cost_value,
+                           " - Gamma: ",gamma_value,
+                           " - Coef0: ",coef0_value, 
+                           sep = ""  )
+            print(texto)
+            print("-----------------------")
+        }
+      }
+    }
+}
+# Conversión a formatos correctos
+cv_results$cost <- as.factor(cv_results$cost)
+cv_results$degree <- as.factor(cv_results$degree)
+cv_results$gamma <- as.factor(cv_results$gamma)
+cv_results$coef0 <- as.factor(cv_results$coef0)
+
+cv_results$accuracy <- as.double(cv_results$accuracy)
+cv_results$sensitivity <- as.double(cv_results$sensitivity)
+cv_results$specificity <- as.double(cv_results$specificity)
+cv_results$auc <- as.double(cv_results$auc)
+# Model
+cv_results <- cv_results |> mutate(model = paste("Degree: ",degree," - Cost: ",cost," - Gamma: ",gamma," - Coef0: ",coef0, sep =" "))
+# Guardamos
+saveRDS(cv_results, file = "./outputs/cv_svm_poli_results.rds")
+```
+
+Se han generado en total 540 modelos de SVM polinomial:
+
+```{r}
+#| message: false
+#| warning: false
+#| echo: false
+
+cv_results <- readRDS("./outputs/cv_svm_poli_results.rds")
+
+datatable(cv_results, rownames = FALSE, filter = "top",options = list(pageLength = 10)) |> formatStyle(names(cv_results), lineHeight = "65%")
+```
+
+
+Vamos a mostrar los 10 mejores modelos agrupados por los hiperparámetros en función de la sensibilidad:
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+
+# Mejores 10 modelos en promedio de sensitivity
+best_mean_cv_results <- cv_results |> 
+                        group_by(model)|> summarise(sensitivity = mean(sensitivity))|> 
+                        arrange(desc(sensitivity)) |>
+                        slice(1:10)
+# Plot
+cv_results |> inner_join(best_mean_cv_results,by = "model")|>
+ggplot( aes(x=model, y=sensitivity.x)) +
+stat_boxplot(geom = "errorbar",width = 0.25) + 
+geom_boxplot( fill = "#ff8fab") +
+labs( title = "Cross Validation Results",
+      subtitle = "Comparativa (en términos de sensitivity) de los modelos")+
+scale_y_continuous(breaks = seq(from = 0.5, to=1, by=0.05))+
+stat_summary(fun.y=mean, geom="point", shape=23, size=1.5, color="#023047", fill="#023047") +
+theme_minimal()+
+theme(plot.title= element_text(size=15, face = "bold" ),
+      axis.title.x = element_blank(),
+      axis.text.x  = element_text(size=7,face = "bold", angle = 90),
+      axis.title.y = element_blank(),
+      axis.text.y  = element_text(size=10,face = "bold"),
+      legend.position = "None"
+      )
+
+```
+
+Por tanto el 🏆 **modelo ganador** 🏆 será el que utiliza **Degree: 2, Cost:0.2, Gamma: 0.1 y coef0:0.75** como hiperparámetros.
+
+### Modelo ganador
+
+```{r}
+#| message: false
+#| warning: false
+
+best_svm_poli <- svm(data=attrition_train_baked,
+                          kernel = "polynomial",
+                          attrition ~ .,
+                          probability = TRUE,
+                          cost = 0.2,
+                          gamma = 0.1,
+                          coef0 = 0.75,
+                          degree = 2)
+
+saveRDS(best_svm_poli, file = "./outputs/best_svm_poli.rds")
+```
+
+### Predicciones en test
+
+```{r}
+#| message: false
+#| warning: false
+#| 
+attrition_pred <- predict(best_svm_poli, newdata = attrition_test_baked, type = "class")
+
+saveRDS(attrition_pred, file = "./outputs/svm_poli_preds.rds")
+```
+
+#### Matriz de confusión
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+# Matriz de confusión
+conf_mat <- confusionMatrix(attrition_pred, attrition_test_baked[["attrition"]], positive = "1")
+# Accuracy
+accuracy_value <- conf_mat[["overall"]][["Accuracy"]]
+# Sensitivity
+sensitivity_value <- conf_mat[["byClass"]][["Sensitivity"]]
+# Specificity
+specificity_value <- conf_mat[["byClass"]][["Specificity"]]
+# AUC
+attrition_pred <- predict(best_svm_lin,newdata = attrition_test_baked, probability=TRUE)
+attrition_pred <- as.data.frame(attr(attrition_pred, "prob"))
+attrition_pred$real_class <- as.factor(attrition_test_baked[["attrition"]])
+
+auc <- attrition_pred |>  roc_auc(truth = real_class, "0")
+auc_value <- auc |> pull(.estimate)
+
+statistics <- data.frame(metrics  = c("accuracy","sensitivity","specificity","auc"),
+                          values = c(accuracy_value,sensitivity_value,specificity_value,auc_value)
+                          )
+knitr::kable(statistics , col.names = gsub("[.]", " ", names(statistics)))
+```
+
+#### Curva ROC Y AUC
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+#| 
+# Curva ROC: etiqueta real vs probabilid de 1
+roc_curve_svm <- attrition_pred |> roc_curve(truth = real_class, `0`)
+# ----------------------
+#   Gráfico Curva ROC
+# ----------------------
+ggplot(roc_curve_svm, aes(x = 1 - specificity, y = sensitivity)) +
+geom_line(lwd = 1, alpha = 0.85, color = "#e01b63") +
+geom_abline(lty = "dashed") +
+coord_equal() +
+labs(x = "1 - Specificity",
+     y = "Sensitivity",
+     title = "CURVA ROC",
+     subtitle = glue("AUC = {round(auc_value, 3)}"))+
+theme_minimal()+
+theme(axis.title.y = element_text(face="bold"),
+      axis.title.x = element_text(face="bold"),
+      plot.title = element_text(size =15,face="bold"),
+      plot.subtitle = element_text(size  =10))
+```
+
+Aunque las métricas globales del modelo son buenas, observamos que la sensibilidad en validación sigue siendo inferior a la que se obtiene en el conjunto de entrenamiento. Esto indica que podría seguir existiendo cierto sobreajuste, ya que el modelo parece estar capturando patrones específicos del conjunto de entrenamiento, en lugar de generalizar correctamente.
+
+Sin embargo, se ha mejorado este problema respecto a la primera versión del modelo. Inicialmente, la sensibilidad era de solo 0.5, lo que indicaba que era como tirar una moneda al aire.
+
+Gracias a los ajustes realizados en el grid de hiperparámetros se ha conseguido mejorar a 0.75 pero queremos mejorar algo estos valores así que vamos a tunear más los hiperparámetros.
+
+Para ello lo que vamos a hacer es modificar el parámetro gamma (permite una mayor generalización cuanto mas bajo es) y ver cual es el que mejor predice:
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+
+gamma1_svm_poli <- svm(data=attrition_train_baked,
+                          kernel = "polynomial",
+                          attrition ~ .,
+                          probability = TRUE,
+                          cost = 0.2,
+                          gamma = 0.01,
+                          coef0 = 0.75,
+                          degree = 2)
+
+gamma2_svm_poli <- svm(data=attrition_train_baked,
+                          kernel = "polynomial",
+                          attrition ~ .,
+                          probability = TRUE,
+                          cost = 0.2,
+                          gamma = 0.05,
+                          coef0 = 0.75,
+                          degree = 2)
+
+gamma3_svm_poli <- svm(data=attrition_train_baked,
+                          kernel = "polynomial",
+                          attrition ~ .,
+                          probability = TRUE,
+                          cost = 0.2,
+                          gamma = 0.1,
+                          coef0 = 0.75,
+                          degree = 2)
+```
+
+[**Modelo con gamma = 0.01**]{.hl-bluepastel}
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+#| 
+attritiong1_pred <- predict(gamma1_svm_poli, newdata = attrition_test_baked, type = "class")
+
+conf_mat <- confusionMatrix(attritiong1_pred, attrition_test_baked[["attrition"]], positive = "1")
+# Accuracy
+accuracy_value <- conf_mat[["overall"]][["Accuracy"]]
+# Sensitivity
+sensitivity_value <- conf_mat[["byClass"]][["Sensitivity"]]
+# Specificity
+specificity_value <- conf_mat[["byClass"]][["Specificity"]]
+# AUC
+attritiong1_pred <- predict(gamma1_svm_poli, newdata = attrition_test_baked, probability=TRUE)
+attritiong1_pred <- as.data.frame(attr(attritiong1_pred, "prob"))
+attritiong1_pred$real_class <- as.factor(attrition_test_baked[["attrition"]])
+
+auc <- attritiong1_pred |>  roc_auc(truth = real_class, "0")
+auc_value <- auc |> pull(.estimate)
+
+statistics <- data.frame(metrics  = c("accuracy","sensitivity","specificity","auc"),
+                          values = c(accuracy_value,sensitivity_value,specificity_value,auc_value)
+                          )
+knitr::kable(statistics , col.names = gsub("[.]", " ", names(statistics)))
+```
+
+[**Modelo con gamma = 0.05**]{.hl-bluepastel}
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+#| 
+attritiong2_pred <- predict(gamma2_svm_poli, newdata = attrition_test_baked, type = "class")
+
+conf_mat <- confusionMatrix(attritiong2_pred, attrition_test_baked[["attrition"]], positive = "1")
+# Accuracy
+accuracy_value <- conf_mat[["overall"]][["Accuracy"]]
+# Sensitivity
+sensitivity_value <- conf_mat[["byClass"]][["Sensitivity"]]
+# Specificity
+specificity_value <- conf_mat[["byClass"]][["Specificity"]]
+# AUC
+attritiong2_pred <- predict(gamma2_svm_poli,newdata = attrition_test_baked, probability=TRUE)
+attritiong2_pred <- as.data.frame(attr(attritiong2_pred, "prob"))
+attritiong2_pred$real_class <- as.factor(attrition_test_baked[["attrition"]])
+
+auc <- attritiong2_pred |>  roc_auc(truth = real_class, "0")
+auc_value <- auc |> pull(.estimate)
+
+statistics <- data.frame(metrics  = c("accuracy","sensitivity","specificity","auc"),
+                          values = c(accuracy_value,sensitivity_value,specificity_value,auc_value)
+                          )
+knitr::kable(statistics , col.names = gsub("[.]", " ", names(statistics)))
+```
+
+[**Modelo con gamma = 0.1**]{.hl-bluepastel}
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+#| 
+attritiong3_pred <- predict(gamma3_svm_poli, newdata = attrition_test_baked, type = "class")
+
+conf_mat <- confusionMatrix(attritiong3_pred, attrition_test_baked[["attrition"]], positive = "1")
+# Accuracy
+accuracy_value <- conf_mat[["overall"]][["Accuracy"]]
+# Sensitivity
+sensitivity_value <- conf_mat[["byClass"]][["Sensitivity"]]
+# Specificity
+specificity_value <- conf_mat[["byClass"]][["Specificity"]]
+# AUC
+attritiong3_pred <- predict(gamma3_svm_poli,newdata = attrition_test_baked, probability=TRUE)
+attritiong3_pred <- as.data.frame(attr(attritiong3_pred, "prob"))
+attritiong3_pred$real_class <- as.factor(attrition_test_baked[["attrition"]])
+
+auc <- attritiong3_pred |>  roc_auc(truth = real_class, "0")
+auc_value <- auc |> pull(.estimate)
+
+statistics <- data.frame(metrics  = c("accuracy","sensitivity","specificity","auc"),
+                          values = c(accuracy_value,sensitivity_value,specificity_value,auc_value)
+                          )
+knitr::kable(statistics , col.names = gsub("[.]", " ", names(statistics)))
+```
+
+
+#### Modelo ganador de verdad de la buena 😛
+
+Aunque el modelo con gamma = 0.1 presentaba la media de sensibilidad más alta en validación cruzada, observamos que el modelo con gamma = 0.01 ofrece un mejor rendimiento sobre el conjunto de test, alcanzando una sensibilidad superior y mantiene muy buenas métricas. 
+
+Esta diferencia sugiere lo que hemos mencionado anteriormente y es que gamma = 0.1 podría estar ajustándose demasiado a los datos de entrenamiento, mientras que una gamma más baja permite una mayor generalización.
+
+Por lo tanto, se selecciona el modelo con gamma = 0.01 para el despliegue final, priorizando su rendimiento en datos no vistos.
+
+```{r}
+#| message: false
+#| warning: false
+#| echo: false
+#| 
+saveRDS(gamma1_svm_poli, file = "./outputs/best_svm_poli.rds")
+
+attritiong1_pred <- predict(gamma1_svm_poli, newdata = attrition_test_baked, type = "class")
+
+saveRDS(attritiong1_pred, file = "./outputs/svm_poli_preds.rds")
+
+conf_mat <- confusionMatrix(attritiong1_pred, attrition_test_baked[["attrition"]], positive = "1")
+# Accuracy
+accuracy_value <- conf_mat[["overall"]][["Accuracy"]]
+# Sensitivity
+sensitivity_value <- conf_mat[["byClass"]][["Sensitivity"]]
+# Specificity
+specificity_value <- conf_mat[["byClass"]][["Specificity"]]
+# AUC
+attritiong1_pred <- predict(gamma1_svm_poli, newdata = attrition_test_baked, probability=TRUE)
+attritiong1_pred <- as.data.frame(attr(attritiong1_pred, "prob"))
+attritiong1_pred$real_class <- as.factor(attrition_test_baked[["attrition"]])
+
+auc <- attritiong1_pred |>  roc_auc(truth = real_class, "0")
+auc_value <- auc |> pull(.estimate)
+
+statistics <- data.frame(metrics  = c("accuracy","sensitivity","specificity","auc"),
+                          values = c(accuracy_value,sensitivity_value,specificity_value,auc_value)
+                          )
+knitr::kable(statistics , col.names = gsub("[.]", " ", names(statistics)))
+```
+
+
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+# Curva ROC: etiqueta real vs probabilidad de 1
+roc_curve_svm <- attritiong1_pred |> roc_curve(truth = real_class, "0")
+
+#--------------------------
+#   Gráfico Curva ROC
+#--------------------------
+ggplot(roc_curve_svm, aes(x = 1 - specificity, y = sensitivity)) +
+geom_line(lwd = 1, alpha = 0.85, color = "#e01b63") +
+geom_abline(lty = "dashed") +
+coord_equal() +
+labs(x = "1 - Specificity",
+     y = "Sensitivity",
+     title = "CURVA ROC",
+     subtitle = glue("AUC = {round(auc_value, 3)}"))+
+theme_minimal()+
+theme(axis.title.y = element_text(face="bold"),
+      axis.title.x = element_text(face="bold"),
+      plot.title = element_text(size =15,face="bold"),
+      plot.subtitle = element_text(size  =10))
+```
+
+### ¿Cómo vamos?
+
+```{r}
+#| message: false
+#| warning: false
+#| echo: false
+#| 
+saveRDS(attritiong1_pred, file = "./outputs/svm_pol_predicted.rds")
+saveRDS(statistics, file = "./outputs/svm_pol_stats.rds")
+saveRDS(roc_curve_svm, file = "./outputs/svm_pol_roc_auc.rds")
+
+svm_pol_stats <- readRDS("./outputs/svm_pol_stats.rds")
+svm_pol_stats$model <- "SVM Polinomial"
+
+svm_pol_roc_curve <- readRDS("./outputs/svm_pol_roc_auc.rds")
+svm_pol_roc_curve$model <- "SVM Polinomial"
+
+svm_lin_stats <- readRDS("./outputs/svm_lin_stats.rds")
+svm_lin_stats$model <- "SVM Lineal"
+
+svm_lin_roc_curve <- readRDS("./outputs/svm_lin_roc_auc.rds")
+svm_lin_roc_curve$model <- "SVM Lineal"
+
+knn_stats <- readRDS("./outputs/knn_stats.rds")
+knn_stats$model <- "KNN"
+
+knn_roc_curve <- readRDS("./outputs/knn_roc_auc.rds")
+knn_roc_curve$model <- "KNN"
+
+tree_stats <- readRDS("./outputs/tree_stats.rds")
+tree_stats$model <- "Árbol"
+
+tree_roc_curve <- readRDS("./outputs/tree_roc_auc.rds")
+tree_roc_curve$model <- "Árbol"
+
+model_stats <- rbind(svm_pol_stats, svm_lin_stats, knn_stats, tree_stats)
+model_roc_curve <- rbind(svm_pol_roc_curve, svm_lin_roc_curve, knn_roc_curve, tree_roc_curve)
+```
+
+```{r}
+#| message: false
+#| warning: false
+#| echo: false
+
+datatable(model_stats |> arrange(metrics, values, model), rownames = FALSE, filter = "top",options = list(pageLength = 4)) |> formatStyle(names(statistics), lineHeight = "65%")
+
+model_stats |> ggplot(aes(x = metrics , y= values, fill = model)) +
+               geom_bar(alpha = 0.85, position = "dodge", stat = "identity") +
+               scale_fill_manual(values = c("Árbol" = "darkslategray1", "KNN" = "indianred1", "Red Neuronal" = "coral", "SVM Lineal" = "pink", "SVM Polinomial" = "darkgoldenrod1", "Ensamblado" = "darkslategray")) +
+               labs(title = "Comparativa Modelos",
+                    subtitle = "Resultados de las métricas para cada modelo empleado")+
+                theme_minimal()+
+                theme(axis.title.y = element_blank(),
+                      axis.title.x = element_blank(),
+                      axis.text.x = element_text(size = 12,face = "bold"),
+                      plot.title = element_text(size =15,face="bold"),
+                      plot.subtitle = element_text(size  =10))
+
+
+
+# Gráfico Curva ROC
+ggplot(model_roc_curve, aes(x = 1 - specificity, y = sensitivity, colour=model)) +
+geom_line(lwd = 1, alpha = 0.85) +
+geom_abline(lty = "dashed") +
+coord_equal() +
+scale_colour_manual(values = c("Árbol" = "darkslategray1", "KNN" = "indianred1", "Red Neuronal" = "coral", "SVM Lineal" = "pink", "SVM Polinomial" = "darkgoldenrod1", "Ensamblado" = "darkslategray")) +
+labs(x = "1 - Specificity",
+     y = "Sensitivity",
+     title = "Comparativa Modelos",
+     subtitle = "Curva ROC (test) de cada modelo empleado")+
+theme_minimal()+
+  theme(axis.title.y = element_text(face="bold"),
+      axis.title.x = element_text(face="bold"),
+      plot.title = element_text(size =15,face="bold"),
+      plot.subtitle = element_text(size  =10))
+```
+
+## Red neuronal
