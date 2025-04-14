@@ -13,17 +13,23 @@ editor: visual
 
 [**ESCENARIO**]{.hl-bluepastel}
 
-Según la Organización Mundial de la Salud (OMS), el [**ictus**]{.hl-bluepastel} es la segunda causa de muerte en el mundo, responsable de aproximadamente el 11% del total de fallecimientos.
+Según la [**Organización Mundial de la Salud (OMS)**]{.hl-pinkpastel}, el mundo se enfrenta a una creciente crisis de personal sanitario, con una proyección de déficit de más de 11 millones de trabajadores para el año 2030. Esta situación se ve agravada por el fenómeno del [**employee attrition**]{.hl-bluepastel}, es decir, el abandono voluntario de profesionales en sus puestos de trabajo.
 
-```{r ictus_grande, echo = FALSE, out.width = "100%", fig.align = "center", fig.cap = ""}
-knitr::include_graphics("./img/ictus_grande.jpg")
+En sectores como el sanitario, este fenómeno alcanza cifras especialmente preocupantes. Por ejemplo, se estima que la [**tasa de rotación del personal hospitalario supera el 20%**]{.hl-bluepastel}, llegando incluso al 26% en algunos contextos recientes, según datos del sector. 
+
+Esta alta rotación compromete la calidad de la asistencia, aumenta los costes operativos y dificulta la planificación de recursos humanos en instituciones de salud.
+
+Ante esta problemática, surge la necesidad de herramientas predictivas que permitan anticipar el riesgo de abandono de los empleados, facilitando una gestión proactiva del talento. En este contexto, el Aprendizaje Automático se posicionan como aliado clave para desarrollar modelos capaces de identificar patrones de riesgo y apoyar la toma de decisiones estratégicas.
+
+```{r echo = FALSE, out.width = "100%", fig.align = "center", fig.cap = ""}
+knitr::include_graphics("./img/employeeAtrittion.png")
 ```
 
-El conjunto de datos sobre [ictus](https://www.kaggle.com/datasets/fedesoriano/stroke-prediction-dataset) (`healthcare_dataset_stroke_data.csv`) está compueto por [**5110 observaciones**]{.hl-pinkpastel} (en este caso cada observación corresponde a un paciente) y de un total de [**12 variables**]{.hl-pinkpastel} (10 variables explicativas, una variable `id` que tomará el rol de identificador y la variable objetivo `stroke`).
+El conjunto de datos sobre [abandono laboral en el ámbito de la salud](https://www.kaggle.com/datasets/jpmiller/employee-attrition-for-healthcare/data) (`watson_healthcare_modified.csv`) está compueto por [**1676 observaciones**]{.hl-pinkpastel} (en este caso cada observación corresponde a un trabajador) y de un total de [**26 variables**]{.hl-pinkpastel} (una variable `employeeid` que tomará el rol de identificador y la variable objetivo `attrition`).
 
 [**OBJETIVO**]{.hl-bluepastel}
 
-Construir un modelo (varios en nuestro caso) para [**predecir la probabilidad de sufrir un ictus**]{.hl-pinkpastel} en función de algunas variables de entrada como el sexo, la edad, diversas enfermedades, el hábito de fumar y otras.
+Construir un modelo (varios en nuestro caso) para [**predecir la probabilidad de abandono laboral de un empleado**]{.hl-pinkpastel} en función de algunas variables de entrada como el sexo, la edad, el puesto en el que trabaja, su sueldo y otras.
 
 [**ENUNCIADO DE LA PRÁCTICA**]{.hl-bluepastel}
 
@@ -4528,3 +4534,152 @@ theme_minimal()+
 ```
 
 ## Red neuronal
+
+### Librerías necesarias
+
+```{r}
+#| code-fold: false
+#| message: false
+#| warning: false
+#| 
+rm(list = ls())
+
+library(tidymodels) # Modelos
+library(tidyverse)  # Depuración datos
+library(themis)     # Oversampling
+library(nnet)       # Redes neuronales
+library(yardstick)  # Metrics
+library(DT)         # Mostrar tabla
+library(caret)      # Matriz de Conf.
+library(glue)       # Variables ggplot
+```
+
+
+### Datos iniciales
+
+```{r}
+#| message: false
+#| warning: false
+
+attrition_data <- readRDS("./data/attrition_data.rds")
+```
+
+En el caso de la red neuronal eliminaremos el ID
+
+```{r}
+#| message: false
+#| warning: false
+
+attrition_data <- attrition_data |> select(-employeeid)
+```
+
+Originalmente la variable objetivo (**attrition**) está distribuida de la siguiente forma:
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+#| 
+attrition_data |> group_by(attrition) |> summarise(n = n(), Porc = round(n()*100.0/nrow(attrition_data),2)) |> 
+ggplot(aes(x = attrition, y = n, fill = attrition)) +
+geom_col(position = "dodge", alpha =0.8) +
+geom_text(aes(label = paste(n," (",Porc,"%)", sep ="")),colour = "black", size = 4,vjust = -0.5, position = position_dodge(.9)) +
+ylim(0,5300)+
+scale_fill_manual(values = c("#023047","#C2185B")) +
+labs(title = "Distribución del target",
+     subtitle = "Reparto de niveles de la variable attrition")+
+theme_minimal()+
+theme(plot.title = element_text(size = 20, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 12),
+      legend.position = "None"
+      )
+```
+
+
+### Train y test
+
+Realizamos la partición de nuestro conjunto de datos en **80% train** y **20% test**
+
+```{r}
+#| warning: false
+#| message: false
+# Semilla
+set.seed(200900)
+# Partición 20% de test
+attrition_split <- initial_split(attrition_data, strata = attrition, prop = 0.80)
+# Train
+attrition_train <- training(attrition_split)
+# Test
+attrition_test <- testing(attrition_split)
+```
+
+
+### Preparación de los datos
+
+El modelo de **Red Neuronal** necesita disponer de variables numéricas (y es conveniente estandarizarlas), por lo que se va a crear también una receta.
+
+```{r}
+#| warning: false
+#| message: false
+# Receta completa
+attrition_recipe <-
+  # Fórmula y datos
+  recipe(data = attrition_train, attrition ~ .) |> 
+  # Categoria Other 
+  step_other(all_nominal_predictors(), threshold = 0.005) |>
+  # Filtro de correlación
+  step_corr(all_numeric_predictors(), threshold = 0.95) |>
+  # Filtro 0 varianza
+  step_zv(all_predictors()) |>
+  # Min / Max
+  step_range(all_numeric_predictors(), min = 0, max = 1) |>
+  # nominales las pasemos a dummy 1/0
+  step_dummy(all_nominal_predictors(), -all_outcomes()) |>
+  # Oversampling
+  step_upsample(attrition, over_ratio = 1)
+```
+
+Tras **aplicar la receta a los datos**, estos quedan de la siguiente forma:
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+
+attrition_train_baked <- bake(attrition_recipe |> prep(), new_data = NULL)
+
+datatable(attrition_train_baked, rownames = FALSE, filter = "top",options = list(pageLength = 10)) |> formatStyle(names(attrition_train_baked), lineHeight = "65%")
+```
+
+### K-Fold cross validation
+
+En primer lugar vamos a indicar el número de divisiones que vamos a realizar y las repeticiones, en nuestro caso serán **5 divisiones** y **3 repeticiones**.
+
+Vamos a tener **15 pares de conjuntos de entrenamiento y validación**.
+
+```{r}
+set.seed(200900)
+
+folds <- vfold_cv(attrition_train_baked, v = 5, strata = attrition, repeats = 3)
+```
+
+
+### Entrenamiento
+
+Inicialmente vamos a crear un modelo que no tenga parámetros fijos para configurar nosotros estos hiperparámetros:
+
+- Número de nodos hidden_units
+
+- Learning rate
+
+- Número de epochs para backpropagation
+
+- Función de activación
+
+- Regularización por penalización
+
+- Regularización por dropout
+
+
