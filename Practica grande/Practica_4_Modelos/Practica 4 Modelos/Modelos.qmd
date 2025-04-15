@@ -3469,7 +3469,7 @@ datatable(statistics |> arrange(metrics, values, model), rownames = FALSE, filte
 #| code-fold: true
 statistics |> ggplot(aes(x = metrics , y= values, fill = model)) +
                geom_bar( alpha = 0.85, position = "dodge", stat = "identity") +
-               scale_fill_manual(values = c("Árbol" = "darkslategray1", "KNN" = "indianred1", "Red Neuronal" = "coral", "SVM Lineal" = "pink", "SVM Polinomial" = "darkgoldenrod1", "Ensamblado" = "darkslategray")) +
+               scale_fill_manual(values = c("Árbol" = "darkslategray1", "KNN" = "indianred1", "Red Neuronal" = "palegreen2", "SVM Lineal" = "pink", "SVM Polinomial" = "darkgoldenrod1", "Ensamblado" = "darkslategray")) +
                labs(#x = "métrica", 
                     #y = "frecuencia absoluta", 
                     title = "Comparativa Modelos",
@@ -3497,7 +3497,7 @@ geom_abline(lty = "dashed") +
 # Hacemos el gráfico cuadrado
 coord_equal() +
 # Color
-scale_colour_manual(values = c("Árbol" = "darkslategray1", "KNN" = "indianred1", "Red Neuronal" = "coral", "SVM Lineal" = "pink", "SVM Polinomial" = "darkgoldenrod1", "Ensamblado" = "darkslategray")) +
+scale_colour_manual(values = c("Árbol" = "darkslategray1", "KNN" = "indianred1", "Red Neuronal" = "palegreen2", "SVM Lineal" = "pink", "SVM Polinomial" = "darkgoldenrod1", "Ensamblado" = "darkslategray")) +
 # Etiquetas
 labs(x = "1 - Specificity",
      y = "Sensitivity",
@@ -3949,7 +3949,7 @@ datatable(model_stats |> arrange(metrics, values, model), rownames = FALSE, filt
 
 model_stats |> ggplot(aes(x = metrics , y= values, fill = model)) +
                geom_bar( alpha = 0.85, position = "dodge", stat = "identity") +
-               scale_fill_manual(values = c("Árbol" = "darkslategray1", "KNN" = "indianred1", "Red Neuronal" = "coral", "SVM Lineal" = "pink", "SVM Polinomial" = "darkgoldenrod1", "Ensamblado" = "darkslategray")) +
+               scale_fill_manual(values = c("Árbol" = "darkslategray1", "KNN" = "indianred1", "Red Neuronal" = "palegreen2", "SVM Lineal" = "pink", "SVM Polinomial" = "darkgoldenrod1", "Ensamblado" = "darkslategray")) +
                labs(title = "Comparativa Modelos",
                     subtitle = "Resultados de las métricas para cada modelo empleado")+
                 theme_minimal()+
@@ -3966,7 +3966,7 @@ ggplot(model_roc_curve, aes(x = 1 - specificity, y = sensitivity, colour=model))
 geom_line(lwd = 1, alpha = 0.85) +
 geom_abline(lty = "dashed") +
 coord_equal() +
-scale_colour_manual(values = c("Árbol" = "darkslategray1", "KNN" = "indianred1", "Red Neuronal" = "coral", "SVM Lineal" = "pink", "SVM Polinomial" = "darkgoldenrod1", "Ensamblado" = "darkslategray")) +
+scale_colour_manual(values = c("Árbol" = "darkslategray1", "KNN" = "indianred1", "Red Neuronal" = "palegreen2", "SVM Lineal" = "pink", "SVM Polinomial" = "darkgoldenrod1", "Ensamblado" = "darkslategray")) +
 labs(x = "1 - Specificity",
      y = "Sensitivity",
      title = "Comparativa Modelos",
@@ -4504,7 +4504,7 @@ datatable(model_stats |> arrange(metrics, values, model), rownames = FALSE, filt
 
 model_stats |> ggplot(aes(x = metrics , y= values, fill = model)) +
                geom_bar(alpha = 0.85, position = "dodge", stat = "identity") +
-               scale_fill_manual(values = c("Árbol" = "darkslategray1", "KNN" = "indianred1", "Red Neuronal" = "coral", "SVM Lineal" = "pink", "SVM Polinomial" = "darkgoldenrod1", "Ensamblado" = "darkslategray")) +
+               scale_fill_manual(values = c("Árbol" = "darkslategray1", "KNN" = "indianred1", "Red Neuronal" = "palegreen2", "SVM Lineal" = "pink", "SVM Polinomial" = "darkgoldenrod1", "Ensamblado" = "darkslategray")) +
                labs(title = "Comparativa Modelos",
                     subtitle = "Resultados de las métricas para cada modelo empleado")+
                 theme_minimal()+
@@ -4521,7 +4521,7 @@ ggplot(model_roc_curve, aes(x = 1 - specificity, y = sensitivity, colour=model))
 geom_line(lwd = 1, alpha = 0.85) +
 geom_abline(lty = "dashed") +
 coord_equal() +
-scale_colour_manual(values = c("Árbol" = "darkslategray1", "KNN" = "indianred1", "Red Neuronal" = "coral", "SVM Lineal" = "pink", "SVM Polinomial" = "darkgoldenrod1", "Ensamblado" = "darkslategray")) +
+scale_colour_manual(values = c("Árbol" = "darkslategray1", "KNN" = "indianred1", "Red Neuronal" = "palegreen2", "SVM Lineal" = "pink", "SVM Polinomial" = "darkgoldenrod1", "Ensamblado" = "darkslategray")) +
 labs(x = "1 - Specificity",
      y = "Sensitivity",
      title = "Comparativa Modelos",
@@ -4552,6 +4552,8 @@ library(yardstick)  # Metrics
 library(DT)         # Mostrar tabla
 library(caret)      # Matriz de Conf.
 library(glue)       # Variables ggplot
+library(rsample)
+library(brulee)
 ```
 
 
@@ -4641,17 +4643,6 @@ attrition_recipe <-
   step_upsample(attrition, over_ratio = 1)
 ```
 
-Tras **aplicar la receta a los datos**, estos quedan de la siguiente forma:
-
-```{r}
-#| warning: false
-#| message: false
-#| echo: false
-
-attrition_train_baked <- bake(attrition_recipe |> prep(), new_data = NULL)
-
-datatable(attrition_train_baked, rownames = FALSE, filter = "top",options = list(pageLength = 10)) |> formatStyle(names(attrition_train_baked), lineHeight = "65%")
-```
 
 ### K-Fold cross validation
 
@@ -4660,26 +4651,986 @@ En primer lugar vamos a indicar el número de divisiones que vamos a realizar y 
 Vamos a tener **15 pares de conjuntos de entrenamiento y validación**.
 
 ```{r}
+#| warning: false
+#| message: false
 set.seed(200900)
 
-folds <- vfold_cv(attrition_train_baked, v = 5, strata = attrition, repeats = 3)
+folds <- vfold_cv(attrition_train, v = 5, strata = attrition, repeats = 3)
 ```
 
 
 ### Entrenamiento
 
-Inicialmente vamos a crear un modelo que no tenga parámetros fijos para configurar nosotros estos hiperparámetros:
+Inicialmente vamos a crear un modelo que no tenga parámetros fijos para después crear un grid con diferentes valores para configurar nosotros los siguientes hiperparámetros:
 
-- Número de nodos hidden_units
+- **Número de capas y nodos**
 
-- Learning rate
+- **Learning rate y número de iteraciones**
 
-- Número de epochs para backpropagation
+- **Función de activación**: Por defecto usaremos ReLU
 
-- Función de activación
+- **Técnicas de regularización**: Usaremos dropout que nos permitirá evitar sobreajuste en el modelo
 
-- Regularización por penalización
+```{r}
+#| warning: false
+#| message: false
+#| 
+nn_model <- mlp(hidden_units = tune("nodes"),
+                epochs = tune("iter"),
+                dropout = tune("drop_out"),
+                learn_rate = tune("lr")) |>
+            set_engine("brulee") |>
+            set_mode("classification")
+```
 
-- Regularización por dropout
+
+#### Flujo de trabajo
+
+Con la receta y el modelo sin parámetros fijos definidos ya tenemos todo listo para crear el flujo de trabajo
+
+```{r}
+#| warning: false
+#| message: false
+
+attrition_wflow <- workflow() |> add_recipe(attrition_recipe) |> add_model(nn_model)
+```
 
 
+#### Grid de hiperparámetros
+
+Para asignar valores a los hiperparámetros de este modelo vamos a crear diferentes grids. En primer lugar para el número de nodos y capas, después para el learning rate, también para el número de iteraciones y por último para el dropout.
+
+```{r}
+#| warning: false
+#| message: false
+
+grid_nn <- expand_grid(nodes = seq(5, 8, by = 1),
+                       iter = c(100, 200, 500, 1000),
+                       drop_out = seq(0, 0.5, by = 0.1),
+                       lr = c(0.001, 0.01, 0.1))
+```
+
+
+Con este grid obtenemos que se van a definir un total de 4x4x6x3 modelos, es decir 288, que aplicandoles validación cruzada pasarían a ser 4152. Lo veo complicado de entrenar 🫠 pero vamos a probar jeje
+
+```{r}
+#| warning: false
+#| message: false
+#| eval: false
+
+set.seed(2009200)
+
+attrition_nn_fit_tune <-  attrition_wflow |> 
+                                tune_grid(resamples = folds, 
+                                grid = grid_nn,
+                                control = control_grid(verbose = TRUE),
+                                metrics = metric_set(accuracy,sens,yardstick::spec,roc_auc))
+
+saveRDS(attrition_nn_fit_tune, file = "./outputs/attrition_first_nn_fit_tune.rds")
+```
+
+
+```{r}
+#| warning: false
+#| message: false
+#| code-fold: true
+#| 
+attrition_nn_fit_tune <- readRDS("./outputs/attrition_first_nn_fit_tune.rds")
+
+cv_results <- attrition_nn_fit_tune |> collect_metrics(summarize = FALSE) |> 
+              select(rep = id, 
+                     fold = id2, 
+                     nodes, 
+                     drop_out, 
+                     iter, 
+                     lr,
+                     metric = .metric, 
+                     value = .estimate ) |>  
+              pivot_wider(names_from = metric, values_from = value) |>
+              mutate(model = as.factor(paste
+                                      ("Nodos: ", nodes, 
+                                        " - ", "Iter: ", iter, 
+                                        " - ", "Dropout: ", drop_out,
+                                        " - ", "LR: ", lr, sep ="")))
+
+
+datatable(cv_results, rownames = FALSE, filter = "top",options = list(pageLength = 10)) |> formatStyle(names(cv_results), lineHeight = "65%")
+```
+
+Visualizamos los mejores modelos en cuando a sensibilidad tras realizar el entrenamiento con cross validation:
+
+```{r}
+#| warning: false
+#| message: false
+#| code-fold: true
+#| 
+
+cv_results_group <- cv_results |> group_by(model) |>  summarise(accuracy = mean(accuracy),
+                                                                 sens = mean(sens),
+                                                                 spec = mean(spec),
+                                                                 auc = mean(roc_auc)
+                                                                 ) |>  
+                                    arrange(desc(accuracy)) |>   
+                                    slice_head(n = 15) |>
+                                    mutate(orden = as.factor(seq(from = 1, to=n(), by=1))) |>
+                                    select(model, orden)
+
+cv_results_top <- merge(cv_results, cv_results_group, by = "model")
+
+
+cv_results_top |> ggplot( aes(x=model, y=sens)) +
+stat_boxplot(geom = "errorbar",width = 0.25) + 
+geom_boxplot( fill = "#6e78ff") +
+labs( title = "Cross Validation Results",
+      subtitle = "Comparativa (en términos de sensitivity) de los modelos")+
+scale_y_continuous(breaks = seq(from = 0, to=1, by=0.1))+
+stat_summary(fun=mean, geom="point", shape=23, size=1.5, color="#023047", fill="#023047") +
+theme_minimal()+
+theme(plot.title= element_text(size=15, face = "bold" ),
+      axis.title.x = element_blank(),
+      axis.text.x  = element_text(size=6,face = "bold", angle = 90),
+      axis.title.y = element_blank(),
+      axis.text.y  = element_text(size=10,face = "bold"),
+      legend.position = "None"
+      )
+```
+
+El mejor modelo parece **Nodos: 7 - Iter: 500 - Dropout: 0 - LR: 0.01**, aun así vamos a corroborarlo mediante la funcion show_best() mediante la sensibilidad:
+
+```{r}
+#| warning: false
+#| message: false
+
+attrition_nn_fit_tune |> show_best(metric = "sens")
+```
+
+Efectivamente el modelo **Nodos: 7 - Iter: 500 - Dropout: 0 - LR: 0.01** es nuestro 🏆 **modelo ganador** 🏆.
+
+### Modelo ganador
+
+Generamos en primer lugar nuestro modelo ganador:
+
+```{r}
+#| message: false
+#| warning: false
+
+set.seed(200900)
+
+best_nn_model <- mlp(hidden_units = 7,
+                     epochs = 500,
+                     dropout = 0,
+                     learn_rate = 0.01) |>
+                 set_engine("nnet") |>
+                 set_mode("classification")
+
+saveRDS(best_nn_model, file = "./outputs/best_ovft_nn.rds")
+```
+
+Creamos el flujo de trabajo de nuestro modelo ganador:
+
+```{r}
+#| message: false
+#| warning: false
+#| 
+attrition_best_wflow <- workflow() |> add_recipe(attrition_recipe) |> add_model(best_nn_model)
+```
+
+Ajustamos el flujo de trabajo del modelo ganador a nuestro conjunto de entrenamiento:
+
+```{r}
+#| message: false
+#| warning: false
+#| 
+attrition_best_nn_fit <- attrition_best_wflow |> fit(data = attrition_train)
+```
+
+### Predicciones en test
+
+Se va a aplicar el modelo ganador al conjunto de test que se reservó al comenzar a tratar los datos para la red neuronal:
+
+```{r}
+#| message: false
+#| warning: false
+
+attrition_pred <- augment(attrition_best_nn_fit, attrition_test)
+```
+
+#### Matriz de confusión 
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+#|
+# Matriz de Confusion
+conf_mat <- confusionMatrix(attrition_pred$.pred_class, attrition_pred$attrition, positive = "1")
+# Accuracy
+accuracy <- conf_mat[["overall"]][["Accuracy"]]
+# Sensitivity
+sensitivity <- conf_mat[["byClass"]][["Sensitivity"]]
+# Specificity
+specificity <- conf_mat[["byClass"]][["Specificity"]]
+# AUC
+auc <- attrition_pred |>  roc_auc(truth = attrition, .pred_0)
+auc_value <- auc |> pull(.estimate)
+
+statistics <- data.frame (metrics  = c("accuracy","sensitivity","specificity","auc"),
+                          values = c(accuracy,sensitivity,specificity,auc_value)
+                          )
+knitr::kable(statistics , col.names = gsub("[.]", " ", names(statistics)))
+```
+
+
+### Overfitting y reentrenamiento del modelo
+
+Se vuelve a observar overfitting en el modelo. Esto es debido al tamaño reducido del dataset y el uso de muchas iteraciones sin dropout y con bastantes nodos. 
+
+Todos estos factores han favorecido que el modelo memorice los datos de entrenamiento en lugar de generalizar correctamente.
+
+Para solucionar este problema vamos a crear un nuevo grid de hiperparámetros con algunos valores diferentes y reentrenar la red.
+
+Además a parte de este nuevo grid de hiperparámetros vamos a reducir las divisiones de nuestro cross validation previo de 5 a 3:
+
+```{r}
+#| warning: false
+#| message: false
+set.seed(200900)
+
+folds <- vfold_cv(attrition_train, v = 3, strata = attrition, repeats = 3)
+```
+
+```{r}
+#| warning: false
+#| message: false
+
+grid_nn <- expand_grid(nodes = c(3,4),
+                       iter = c(100, 200),
+                       drop_out = c(0.4, 0.5),
+                       lr = 0.01)
+```
+
+Vamos a reducir el número de nodos y de iteraciones en nuestra red ya que el conjunto de datos es pequeño. 
+
+Además vamos a considerar únicamente dropouts que desactiven bastante cantidad de neuronas para que no haya una memorización de los datos.
+
+Por otro lado se va a conservar el valor del hiperparámetro del learning rate del modelo ganador que estaba sobreajustado.
+
+```{r}
+#| warning: false
+#| message: false
+#| eval: false
+
+set.seed(2009200)
+
+attrition_nn_fit_tune <-  attrition_wflow |> 
+                                tune_grid(resamples = folds, 
+                                grid = grid_nn,
+                                control = control_grid(verbose = TRUE),
+                                metrics = metric_set(yardstick::accuracy,yardstick::sens,yardstick::spec,yardstick::roc_auc))
+
+saveRDS(attrition_nn_fit_tune, file = "./outputs/attrition_nn_fit_tune.rds")
+```
+
+Me acabo de dar cuenta que he sobreescrito el archivo anterior del modelo sobreajustado y voy a tener que entrenarlo de nuevo otro dia entero por no subirlo a git
+
+```{r echo = FALSE, out.width = "50%", fig.align = "center", fig.cap = ""}
+knitr::include_graphics("./img/sad.jpg")
+```
+
+
+```{r}
+#| warning: false
+#| message: false
+#| code-fold: true
+#| 
+attrition_nn_fit_tune <- readRDS("./outputs/attrition_nn_fit_tune.rds")
+
+cv_results <- attrition_nn_fit_tune |> collect_metrics(summarize = FALSE) |> 
+              select(rep = id, 
+                     fold = id2, 
+                     nodes, 
+                     drop_out, 
+                     iter, 
+                     lr,
+                     metric = .metric, 
+                     value = .estimate ) |>  
+              pivot_wider(names_from = metric, values_from = value) |>
+              mutate(model = as.factor(paste
+                                      ("Nodos: ", nodes, 
+                                        " - ", "Iter: ", iter, 
+                                        " - ", "Dropout: ", drop_out,
+                                        " - ", "LR: ", lr, sep ="")))
+
+
+datatable(cv_results, rownames = FALSE, filter = "top",options = list(pageLength = 10)) |> formatStyle(names(cv_results), lineHeight = "65%")
+```
+
+```{r}
+#| warning: false
+#| message: false
+#| code-fold: true
+#| 
+
+cv_results_group <- cv_results |> group_by(model) |>  summarise(accuracy = mean(accuracy),
+                                                                 sens = mean(sens),
+                                                                 spec = mean(spec),
+                                                                 auc = mean(roc_auc)
+                                                                 ) |>  
+                                    arrange(desc(sensitivity)) |>   
+                                    slice_head(n = 15) |>
+                                    mutate(orden = as.factor(seq(from = 1, to=n(), by=1))) |>
+                                    select(model, orden)
+
+cv_results_top <- merge(cv_results, cv_results_group, by = "model")
+
+
+cv_results_top |> ggplot( aes(x=model, y=sens)) +
+stat_boxplot(geom = "errorbar",width = 0.25) + 
+geom_boxplot( fill = "#6e78ff") +
+labs( title = "Cross Validation Results",
+      subtitle = "Comparativa (en términos de sensitivity) de los modelos")+
+scale_y_continuous(breaks = seq(from = 0, to=1, by=0.1))+
+stat_summary(fun=mean, geom="point", shape=23, size=1.5, color="#023047", fill="#023047") +
+theme_minimal()+
+theme(plot.title= element_text(size=15, face = "bold" ),
+      axis.title.x = element_blank(),
+      axis.text.x  = element_text(size=7,face = "bold", angle = 90),
+      axis.title.y = element_blank(),
+      axis.text.y  = element_text(size=10,face = "bold"),
+      legend.position = "None"
+      )
+```
+
+Una vez finalizado el entrenamiento, obtenemos de nuevo el mejor modelo por sensibilidad:
+
+```{r}
+#| warning: false
+#| message: false
+
+attrition_nn_fit_tune |> show_best(metric = "sens")
+```
+
+Viendo la gráfica en conjunto con los resultados de la función show_best(), he decidido seleccionar como modelo ganador el 2º que proporciona la función y es que por el tamaño de la caja parece tener mayor estabilidad que el modelo con mejor media.
+
+Además en este no existen valores atípicos extremos que indiquen caídas críticas de desempeño. Su comportamiento consistente a lo largo de las distintas particiones del cross validation sugiere una buena generalización sobre nuevos datos.
+
+ **Nodos: 3 - Iter: 200 - Dropout: 0.5 - LR: 0.01** es nuestro 🏆 **modelo ganador** 🏆.
+
+### Modelo ganador sí que sí
+
+Generamos el modelo ganador del segundo entrenamiento
+
+```{r}
+#| message: false
+#| warning: false
+
+set.seed(200900)
+
+
+best_nn_model <- mlp(hidden_units = 3,
+                     epochs = 200,
+                     dropout = 0.5,
+                     learn_rate = 0.01) |>
+                 set_engine("nnet") |>
+                 set_mode("classification")
+
+saveRDS(best_nn_model, file = "./outputs/best_nn.rds")
+```
+
+Creamos también el flujo de trabajo con el mejor modelo:
+
+```{r}
+#| message: false
+#| warning: false
+#| 
+attrition_best_wflow <- workflow() |> add_recipe(attrition_recipe) |> add_model(best_nn_model)
+```
+
+Ajustamos el conjunto de entrenamiento a nuestro mejor flujo de trabajo:
+
+```{r}
+#| message: false
+#| warning: false
+#| 
+attrition_best_nn_fit <- attrition_best_wflow |> fit(data = attrition_train)
+```
+
+### Predicciones en test (2º Intento)
+
+Se va a aplicar el modelo ganador del segundo entrenamiento al conjunto de test que se reservó al comenzar a tratar los datos para la red neuronal:
+
+```{r}
+#| message: false
+#| warning: false
+
+attrition_pred <- augment(attrition_best_nn_fit, attrition_test)
+
+saveRDS(attrition_pred, file = "./outputs/nn_preds.rds")
+```
+
+#### Matriz de confusión (2º Intento)
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+#|
+# Matriz de Confusion
+conf_mat <- confusionMatrix(attrition_pred$.pred_class, attrition_pred$attrition, positive = "1")
+# Accuracy
+accuracy <- conf_mat[["overall"]][["Accuracy"]]
+# Sensitivity
+sensitivity <- conf_mat[["byClass"]][["Sensitivity"]]
+# Specificity
+specificity <- conf_mat[["byClass"]][["Specificity"]]
+# AUC
+auc <- attrition_pred |>  roc_auc(truth = attrition, .pred_0)
+auc_value <- auc |> pull(.estimate)
+
+statistics <- data.frame (metrics  = c("accuracy","sensitivity","specificity","auc"),
+                          values = c(accuracy,sensitivity,specificity,auc_value)
+                          )
+knitr::kable(statistics , col.names = gsub("[.]", " ", names(statistics)))
+```
+
+#### Curva ROC Y AUC
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+#| 
+# Curva ROC: etiqueta real vs probabilid de 1
+roc_curve_nn <- attrition_pred |> roc_curve(truth = attrition, .pred_0)
+# ----------------------
+#   Gráfico Curva ROC
+# ----------------------
+ggplot(roc_curve_nn, aes(x = 1 - specificity, y = sensitivity)) +
+geom_line(lwd = 1, alpha = 0.85, color = "#e01b63") +
+geom_abline(lty = "dashed") +
+coord_equal() +
+labs(x = "1 - Specificity",
+     y = "Sensitivity",
+     title = "CURVA ROC",
+     subtitle = glue("AUC = {round(auc_value, 3)}"))+
+theme_minimal()+
+theme(axis.title.y = element_text(face="bold"),
+      axis.title.x = element_text(face="bold"),
+      plot.title = element_text(size =15,face="bold"),
+      plot.subtitle = element_text(size  =10))
+```
+
+
+### ¿Cómo vamos?
+
+```{r}
+#| message: false
+#| warning: false
+#| echo: false
+#| 
+saveRDS(attrition_pred, file = "./outputs/nn_predicted.rds")
+saveRDS(statistics, file = "./outputs/nn_stats.rds")
+saveRDS(roc_curve_nn, file = "./outputs/nn_roc_auc.rds")
+
+nn_stats <- readRDS("./outputs/nn_stats.rds")
+nn_stats$model <- "Red Neuronal"
+
+nn_roc_curve <- readRDS("./outputs/nn_roc_auc.rds")
+nn_roc_curve$model <- "Red Neuronal"
+
+svm_pol_stats <- readRDS("./outputs/svm_pol_stats.rds")
+svm_pol_stats$model <- "SVM Polinomial"
+
+svm_pol_roc_curve <- readRDS("./outputs/svm_pol_roc_auc.rds")
+svm_pol_roc_curve$model <- "SVM Polinomial"
+
+svm_lin_stats <- readRDS("./outputs/svm_lin_stats.rds")
+svm_lin_stats$model <- "SVM Lineal"
+
+svm_lin_roc_curve <- readRDS("./outputs/svm_lin_roc_auc.rds")
+svm_lin_roc_curve$model <- "SVM Lineal"
+
+knn_stats <- readRDS("./outputs/knn_stats.rds")
+knn_stats$model <- "KNN"
+
+knn_roc_curve <- readRDS("./outputs/knn_roc_auc.rds")
+knn_roc_curve$model <- "KNN"
+
+tree_stats <- readRDS("./outputs/tree_stats.rds")
+tree_stats$model <- "Árbol"
+
+tree_roc_curve <- readRDS("./outputs/tree_roc_auc.rds")
+tree_roc_curve$model <- "Árbol"
+
+model_stats <- rbind(nn_stats, svm_pol_stats, svm_lin_stats, knn_stats, tree_stats)
+model_roc_curve <- rbind(nn_roc_curve, svm_pol_roc_curve, svm_lin_roc_curve, knn_roc_curve, tree_roc_curve)
+```
+
+```{r}
+#| message: false
+#| warning: false
+#| echo: false
+
+datatable(model_stats |> arrange(metrics, values, model), rownames = FALSE, filter = "top",options = list(pageLength = 5)) |> formatStyle(names(statistics), lineHeight = "65%")
+
+model_stats |> ggplot(aes(x = metrics , y= values, fill = model)) +
+               geom_bar(alpha = 0.85, position = "dodge", stat = "identity") +
+               scale_fill_manual(values = c("Árbol" = "darkslategray1", "KNN" = "indianred1", "Red Neuronal" = "palegreen2", "SVM Lineal" = "pink", "SVM Polinomial" = "darkgoldenrod1", "Ensamblado" = "darkslategray")) +
+               labs(title = "Comparativa Modelos",
+                    subtitle = "Resultados de las métricas para cada modelo empleado")+
+                theme_minimal()+
+                theme(axis.title.y = element_blank(),
+                      axis.title.x = element_blank(),
+                      axis.text.x = element_text(size = 12,face = "bold"),
+                      plot.title = element_text(size =15,face="bold"),
+                      plot.subtitle = element_text(size  =10))
+
+
+
+# Gráfico Curva ROC
+ggplot(model_roc_curve, aes(x = 1 - specificity, y = sensitivity, colour=model)) +
+geom_line(lwd = 1, alpha = 0.85) +
+geom_abline(lty = "dashed") +
+coord_equal() +
+scale_colour_manual(values = c("Árbol" = "darkslategray1", "KNN" = "indianred1", "Red Neuronal" = "palegreen2", "SVM Lineal" = "pink", "SVM Polinomial" = "darkgoldenrod1", "Ensamblado" = "darkslategray")) +
+labs(x = "1 - Specificity",
+     y = "Sensitivity",
+     title = "Comparativa Modelos",
+     subtitle = "Curva ROC (test) de cada modelo empleado")+
+theme_minimal()+
+  theme(axis.title.y = element_text(face="bold"),
+      axis.title.x = element_text(face="bold"),
+      plot.title = element_text(size =15,face="bold"),
+      plot.subtitle = element_text(size  =10))
+```
+
+
+
+## Ensamble - Bagging con Random Forest
+
+### Librerías necesarias
+
+```{r}
+#| message: false
+#| warning: false
+
+rm(list = ls())
+
+library(tidyverse)    # Depuración datos
+library(skimr)        # Resumen numérico
+library(ggplot2)      # Gráficos
+library(tidymodels)   # Modelos
+library(rpart)        # CART
+library(rpart.plot)   # Graficar árbol
+library(caret)        # Matriz de Confusion
+library(glue)         # pegar texto + variables fácilmente
+library(DT)           # Para mostrar tabla (formatStyle)
+library(ROSE)         # Para Oversampling
+library(yardstick)    # Cómo funcionan modelos
+library(forcats)      # Para factores
+library(randomForest) # rf
+library(themis)       # Oversampling
+library(gbm)          # Importancia GB
+```
+
+### Datos iniciales
+
+```{r}
+#| message: false
+#| warning: false
+
+attrition_data <- readRDS("./data/attrition_data.rds")
+```
+
+En el caso del Random Forest también eliminaremos el ID
+
+```{r}
+#| message: false
+#| warning: false
+
+attrition_data <- attrition_data |> select(-employeeid)
+```
+
+La variable objetivo (**attrition**) está distribuida de la siguiente forma:
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+#| 
+attrition_data |> group_by(attrition) |> summarise(n = n(), Porc = round(n()*100.0/nrow(attrition_data),2)) |> 
+ggplot(aes(x = attrition, y = n, fill = attrition)) +
+geom_col(position = "dodge", alpha =0.8) +
+geom_text(aes(label = paste(n," (",Porc,"%)", sep ="")),colour = "black", size = 4,vjust = -0.5, position = position_dodge(.9)) +
+ylim(0,5300)+
+scale_fill_manual(values = c("#023047","#C2185B")) +
+labs(title = "Distribución del target",
+     subtitle = "Reparto de niveles de la variable attrition")+
+theme_minimal()+
+theme(plot.title = element_text(size = 20, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 12),
+      legend.position = "None"
+      )
+```
+
+
+### Train y test
+
+Dividimos nuestro conjunto de datos en **80% train** y **20% test**
+
+```{r}
+#| warning: false
+#| message: false
+# Semilla
+set.seed(200900)
+# Partición 20% de test
+attrition_split <- initial_split(attrition_data, strata = attrition, prop = 0.80)
+# Train
+attrition_train <- training(attrition_split)
+# Test
+attrition_test <- testing(attrition_split)
+```
+
+
+### Oversampling
+
+Hemos observado que nuestros datos están desbalanceados por lo que vamos a compensarlos mediante la técnica de oversampling:
+
+```{r}
+#| warning: false
+#| message: false
+
+attrition_train_balance <- ovun.sample(attrition ~ .,
+                                   data = attrition_train,
+                                   seed = 200900,
+                                   method = "over")$data
+```
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+#| 
+attrition_train_balance |> group_by(attrition) |> summarise(n = n(), Porc = round(n()*100.0/nrow(attrition_train_balance),2)) |> 
+ggplot(aes(x = attrition, y = n, fill = attrition)) +
+geom_col(position = "dodge", alpha =0.8) +
+geom_text(aes(label = paste(n," (",Porc,"%)", sep ="")),colour = "black", size = 4,vjust = -0.5, position = position_dodge(.9)) +
+ylim(0,5300)+
+scale_fill_manual(values = c("#023047","#C2185B")) +
+labs(title = "Distribución del target",
+     subtitle = "Reparto de niveles de la variable attrition")+
+theme_minimal()+
+theme(plot.title = element_text(size = 20, face = "bold"),
+      axis.title.y = element_blank(),
+      axis.title.x =element_blank(),
+      axis.text.x = element_text(size = 12),
+      legend.position = "None"
+      )
+```
+
+### K-Fold cross validation
+
+Para realizar el proceso de k-folding se va a utilizar la función proporcionada en la asignatura de aprendizaje automático. 
+
+```{r}
+#| code-fold: false
+#| message: false
+#| warning: false
+#| 
+source("./funciones/utils.r")
+
+attrition_data_cv <- fold_rep_for_cv(data = attrition_train_balance, folds = 3, reps = 3, target = "attrition", seed = 200900)
+```
+
+Una vez creadas las particiones ya se puede configurar un grid de hiperparámetros con el que se entrenará este Random Forest.
+
+### Grid de hiperparámetros
+
+En este modelo de Random Forest vamos a configurar los siguientes hiperparámetros:
+
+- Nº de árboles que es realmente el número de iteraciones.
+
+- Nº de variables a muestrear
+
+- Tamaño de muestra para entrenar cada árbol. Si el número de observaciones es pequeño, mejor utilizar con reemplazamiento
+
+- Tamaño mínimo de un nodo intermedio para seguir generando divisiones
+
+En general se podrían configurar muchos más hiperparámetros que son propios del árbol de decisión, pero para no aumentar la complejidad y evitar que el cómputo de estos modelos sea excesivo se va a considerar solo el nodeSize como parámetro de los Árboles de Decisión.
+
+```{r}
+#| code-fold: false
+#| message: false
+#| warning: false
+#| 
+nodesize_list <- c(5, 30, 40, 50, 90)
+
+ntrees_list <- c(50, 100, 200, 400)
+
+mtry_list <- c(2, 4 ,6)
+
+sampsize_list <- c(100, 200, 300, 400)
+```
+
+El parámetro de tamaño de la muestra es grande en comparación con nuestro conjunto de datos por lo que el valor de replace en Random Forest no debería de variar mucho el resultado.
+
+El número de árboles tomará valores de 200 o 500, cuantos más haya será más robusto y a partir de cierto punto temprano no mejora mucho por lo que no tiene sentido ampliar mucho este número.
+
+En cuanto al número de variables a muestrear, en nuestro caso, tenemos 19 variables en el dataset y dentro de los modelos Random Forest muchas veces definen este valor la raíz del número total de variables, es decir en nuestro caso aproximadamente 4. Vamos a asignar también unos valores un poco más bajos y altos para realizar la prueba.
+
+Por último, el tamaño de los nodos es reducido ya que el conjunto de datos también lo es pero no queremos que sea muy reducido para evitar sobreajuste.
+
+
+### Entrenamiento
+
+```{r}
+#| code-fold: true
+#| message: false
+#| warning: false
+#| results: false
+#| eval: false
+
+cv_results <- data.frame(rep          = integer(),
+                         fold         = integer(),
+                         ntree        = integer(),
+                         mtry         = integer(),
+                         sampsize     = integer(),
+                         nsize        = integer(),
+                         accuracy     = double(),
+                         kappa        = double(),
+                         sensitivity  = double(),
+                         specificity  = double(),
+                         auc          = double())
+
+
+for (data_fold in attrition_data_cv) 
+{
+    #---------------------------------
+    # Conjuntos de Train y Val
+    #---------------------------------
+    rep_value <- data_fold[["repeat"]]
+    fold_value <- data_fold[["fold"]]
+    train <- data_fold[["train_data"]]
+    val <- data_fold[["validation_data"]]
+    
+    #---------------------------------
+    # Fine tunning con diferentes hiperparámetros
+    #---------------------------------
+    
+    for (ntree in ntrees_list) 
+    {
+      for (mtry in mtry_list) 
+      {
+        for (sampsize in sampsize_list) 
+        {
+            for (nsize in nodesize_list) 
+            {
+            # ----------------- 
+            #      Modelo
+            # -----------------
+            rf_model <- randomForest(attrition ~ .,
+                              data = train,
+                              ntree = ntree,
+                              mtry  = mtry, 
+                              sampsize = sampsize,
+                              nodesize = nsize,
+                              replace=TRUE,
+                              importance = TRUE)
+            
+            
+            # Predicciones en Val
+            pred <- predict(rf_model, newdata = val, type = "class") 
+            # Matriz de confusión
+            conf_mat <- confusionMatrix(pred, val[["attrition"]], positive = "1")
+            # Accuracy
+            accuracy_value <- conf_mat[["overall"]][["Accuracy"]]
+            # Kappa
+            kappa_value <- conf_mat[["overall"]][["Kappa"]]
+            # Sensitivity
+            sensitivity_value <- conf_mat[["byClass"]][["Sensitivity"]]
+            # Specificity
+            specificity_value <- conf_mat[["byClass"]][["Specificity"]]
+            # Curva ROC y AUC
+            pred <- as.data.frame(predict(rf_model, val, type="prob"))
+            pred$real_class <- as.factor(val[["attrition"]])
+            pred <- pred |>  rename(prob_attrition = "1", prob_none = "0")
+            auc <- pred |>  roc_auc(truth = real_class, prob_none)
+            auc_value <- auc |>  pull(.estimate)
+            # ----------------------------------------> Guardamos resultados
+            cv_results[nrow(cv_results) + 1,] <- c( rep_value,
+                                                    fold_value,
+                                                    ntree,
+                                                    mtry,
+                                                    sampsize,
+                                                    nsize,
+                                                    round(accuracy_value,6),
+                                                    round(kappa_value,6),
+                                                    round(sensitivity_value,6),
+                                                    round(specificity_value,6),
+                                                    round(auc_value,6))
+            # Para mostrar por pantalla lo que  se va ejecutando
+            texto <- paste("Repeat: ",rep_value,
+                           " - Fold: ",fold_value, 
+                           " - Node size: ",nsize, 
+                           " - Sample size: ",sampsize,
+                           " - Mtry: ",mtry,
+                           " - NTree: ",ntree, sep = "" )
+            print(texto)
+            print("-----------------------")
+          }
+        }
+      }
+    }
+         
+}
+# Conversión a formatos correctos
+cv_results$ntree <- as.double(cv_results$ntree)
+cv_results$mtry <- as.double(cv_results$mtry)
+cv_results$sampsize <- as.double(cv_results$sampsize)
+cv_results$nsize <- as.double(cv_results$nsize)
+cv_results$accuracy <- as.double(cv_results$accuracy)
+cv_results$kappa <- as.double(cv_results$kappa)
+cv_results$sensitivity <- as.double(cv_results$sensitivity)
+cv_results$specificity <- as.double(cv_results$specificity)
+cv_results$auc <- as.double(cv_results$auc)
+# Variable con nombre modelos
+cv_results <- cv_results |>  mutate(model = paste("nSize: ",nsize, " - sampSize:",sampsize," - mTry:" ,mtry," - nTree:" ,ntree, sep = ""))
+# Guardamos
+saveRDS(cv_results, file = "./outputs/rf_cv_results.rds")
+
+
+```
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+
+cv_results <- readRDS("./outputs/rf_cv_results.rds")
+
+datatable(cv_results, rownames = FALSE, filter = "top",options = list(pageLength = 10)) |> formatStyle(names(cv_results), lineHeight = "65%")
+```
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+
+# Mejores 10 modelos en promedio de sensitivity
+best_mean_cv_results <- cv_results |> 
+                        group_by(model)|> summarise(sensitivity = mean(sensitivity))|> 
+                        arrange(desc(sensitivity)) |>
+                        slice(1:10)
+# Plot
+cv_results |> inner_join(best_mean_cv_results,by = "model")|>
+ggplot( aes(x=model, y=sensitivity.x)) +
+stat_boxplot(geom = "errorbar",width = 0.25) + 
+geom_boxplot( fill = "#ff8fab") +
+labs( title = "Cross Validation Results",
+      subtitle = "Comparativa (en términos de sensitivity) de los modelos")+
+scale_y_continuous(breaks = seq(from = 0.5, to=1, by=0.05))+
+stat_summary(fun.y=mean, geom="point", shape=23, size=1.5, color="#023047", fill="#023047") +
+theme_minimal()+
+theme(plot.title= element_text(size=15, face = "bold" ),
+      axis.title.x = element_blank(),
+      axis.text.x  = element_text(size=7,face = "bold", angle = 90),
+      axis.title.y = element_blank(),
+      axis.text.y  = element_text(size=10,face = "bold"),
+      legend.position = "None"
+      )
+
+```
+
+### Modelo ganador
+
+```{r}
+#| message: false
+#| warning: false
+#| 
+set.seed(200900)
+best_rf_model <- randomForest(attrition ~ .,
+                              data = attrition_train_balance,
+                              ntree = 400,
+                              mtry  = 6, 
+                              sampsize = 400,
+                              nodesize = 5,
+                              replace=TRUE,
+                              importance = TRUE
+                              )
+# Guardar modelo
+saveRDS(best_rf_model, file = "./outputs/best_rf_model.rds")
+```
+
+```{r}
+#| message: false
+#| warning: false
+#| 
+
+importance_rf <- as.data.frame(best_rf_model[["importance"]])
+importance_rf <- rownames_to_column(importance_rf, "Variables") |> arrange(desc(MeanDecreaseGini))
+importance_rf$Variables <- as.factor(importance_rf$Variables)
+
+
+importance_rf |> mutate(Variables = fct_reorder(Variables, MeanDecreaseGini)) |>
+ggplot( aes(x=Variables, y=MeanDecreaseGini)) +
+geom_bar(stat="identity", fill="#e01b63", width=.8)+
+coord_flip() +
+theme_bw()+
+theme(axis.title.x = element_blank(),
+      axis.text.x  = element_text(size=10,face = "bold"),
+      axis.title.y = element_blank(),
+      axis.text.y  = element_text(size=10,face = "bold"),
+      legend.position = "None"
+      ) 
+```
+
+### Predicciones en test
+
+```{r}
+# Matriz de Confusion
+rf_pred <- predict(best_rf_model, newdata = attrition_test, type="response")
+conf_mat <- confusionMatrix(rf_pred, attrition_test$attrition, positive = "1")
+# Accuracy
+accuracy <- conf_mat[["overall"]][["Accuracy"]]
+# Sensitivity
+sensitivity <- conf_mat[["byClass"]][["Sensitivity"]]
+# Specificity
+specificity <- conf_mat[["byClass"]][["Specificity"]]
+# AUC
+rf_pred <- as.data.frame(predict(best_rf_model, attrition_test, type="prob"))
+rf_pred$real_class <- as.factor(attrition_test[["attrition"]])
+auc <- rf_pred |> roc_auc(truth = real_class, "0")
+auc_value <- auc |> pull(.estimate)
+# Almacenamos valores en dataframe para visualizar mejor
+statistics <- data.frame (metrics  = c("accuracy","sensitivity","specificity","auc"),
+                          values = c(accuracy,sensitivity,specificity,auc_value)
+                          )
+knitr::kable(statistics , col.names = gsub("[.]", " ", names(statistics)))
+```
+
+```{r}
+#| message: false
+#| warning: false
+#| code-fold: true
+#| 
+# Curva ROC: etiqueta real vs probabilid de 1
+roc_curve_rf <- rf_pred |> roc_curve(truth = real_class, "0")
+# ----------------------
+#   Gráfico Curva ROC
+# ----------------------
+ggplot(roc_curve_rf, aes(x = 1 - specificity, y = sensitivity)) +
+geom_line(lwd = 1, alpha = 0.85, color = "#e01b63") +
+geom_abline(lty = "dashed") +
+coord_equal() +
+labs(x = "1 - Specificity",
+     y = "Sensitivity",
+     title = "CURVA ROC",
+     subtitle = glue("AUC = {round(auc_value, 3)}"))+
+theme_minimal()+
+theme(axis.title.y = element_text(face="bold"),
+      axis.title.x = element_text(face="bold"),
+      plot.title = element_text(size =15,face="bold"),
+      plot.subtitle = element_text(size  =10))
+```
