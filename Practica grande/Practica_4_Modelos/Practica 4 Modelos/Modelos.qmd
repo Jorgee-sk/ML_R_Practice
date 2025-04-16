@@ -2346,13 +2346,106 @@ Un árbol consta de:
 
 - **Nodos hoja**: Nodos sin hijo que finalizan una rama y contienen resultados finales (clases o valores numéricos).
 
-#### Criterios de división
+#### Criterios de división - Variables dependientes cualitativas
 
 ##### Indice de Gini
 
 Calcula la impureza del nodo como la probabilidad de obtener dos elementos de un mismo nodo y que no ocurra que ambos pertenecen a la misma clase.
 
 
+```{r echo = FALSE, out.width = "30%", fig.align = "center", fig.cap = ""}
+knitr::include_graphics("./img/formulagini.png")
+```
+
+
+Si un conjunto de datos $D$ se divide en un atributo $A$ en dos subconjuntos $D_1$ y $D_2$ con tamaños 
+$n_1$ y $n_2$ respectivamente, la impureza de Gini puede definirse como:
+
+$$
+Gini_{A} (D) = \frac {n_1}{n} Gini(D_1) + \frac {n_2}{n} Gini(D_2)
+$$
+
+Al entrenar un árbol de decisión, el atributo que proporciona el menor $Gini_{A} (D)$ para dividir el nodo.
+
+Para obtener la ganancia de información de un atributo, la impureza ponderada de las ramas se resta de la impureza original. 
+
+También se puede elegir la mejor división maximizando la ganancia de Gini. La ganancia de Gini se calcula del siguiente modo
+
+$$
+\triangle Gini(A) = Gini(D)- Gini_A(D)
+$$
+
+##### Entropía
+
+También se basa en calcular la impureza del nodo, en este caso, como la cantidad de información necesaria para explicar un nodo. Su formula viene dada por:
+
+```{r echo = FALSE, out.width = "40%", fig.align = "center", fig.cap = ""}
+knitr::include_graphics("./img/formulaentrop.png")
+```
+
+##### Criterios basados en inferencia ($\chi^{2}$)
+
+Existe una alternativa denominada árboles inferenciales, en los cuales la selección de ramas se realiza en base al método estadístico de la $\chi^{2}$ (contraste de independencia). 
+
+Se mide a partir de la suma de los cuadrados de las diferencia estandarizadas entre las frecuencias observadas y esperadas de la variable objetivo.
+
+```{r echo = FALSE, fig.cap = "", out.width = "30%", fig.align = "center"}
+knitr::include_graphics("./img/formulachi.png")
+```
+
+- Si $p − valor < \alpha$, entonces rechazamos $H_{0}$ (ergo hay una dependencia entre el corte y el reparto de clases, es un corte que ayuda a segmentar). 
+
+- Si $p − valor ≥ \alpha$, no rechazamos independencia (no hay evidencia suficiente para decir que el corte haya segmentado adecuadamente). 
+
+A mayor valor del estadístico, menor será el $p − valor$: ordenamos el p-valor de las decisiones de menor a mayor, parando si llegamos a un hijo cuyo $p − valor > \alpha$. Es decir, seleccionamos el corte con valor más alto.
+
+
+#### Criterios de división - Variables dependientes continuas
+
+##### F de Snedecor (usado en ANOVA)
+
+En el contexto de disponer de una Variable dependiente continua, el criterio más utilizado es el estadístico **F de Snedecor** (usado en ANOVA):
+
+```{r formulafsned, echo = FALSE, fig.cap = "", out.width = "60%", fig.align = "center"}
+knitr::include_graphics("./img/formulafsned.png")
+```
+
+Se toma la división que es más significativa (aquella que hace variar más la media de la variable dependiente en los dos grupos, que es la que tiene el valor de F más alto).
+
+##### Varianza
+
+Se calcula la **variabilidad** de la variable dependiente en cada grupo y se suma.
+
+```{r formulavar, echo = FALSE, fig.cap = "", out.width = "45%", fig.align = "center"}
+knitr::include_graphics("./img/formulavar.png")
+```
+
+Además se elige la división que construye grupos más homogéneos internamente y diferentes entre sí. Es decir, se desea:
+
+$$
+Max(Var(Nodo_{padre})-\sum_{b}Var(Rama_{b}))  
+$$
+
+
+#### Importancia de las variables
+
+La importancia de una característica en un árbol de decisión se calcula de la siguiente manera: 
+
+Se revisan todas las divisiones para las que se utilizó y se mide cuánto se ha reducido el índice de Gini (o el criterio de división correspondiente) en comparación con el nodo principal. 
+
+La suma de todas las importancias se escala a 100. Esto significa que cada importancia puede interpretarse como una parte de la importancia general del modelo.
+
+#### Poda
+
+El algoritmo de construcción de un árbol es un algoritmo greedy, lo que quiere decir que toma la mejor decisión en cada paso pero no significa que globalmente vaya a ser la mejor.
+
+Para evitar todas estas hojas que aportan sobreajuste a nuestro modelo aparece la poda que se encarga de eliminar divisiones de nivel inferior que no contribuyen significativamente a la precisión del árbol.
+
+Existen varios métodos de poda pero se pueden agrupar en dos grupos grandes:
+
+-   **Poda previa** (*Pre-Pruning*): En cada etapa de división se verifica el error de **validación cruzada**, si éste no disminuye lo suficiente se detiene la división.
+
+-   **Poda posterior** (*Post-Pruning*): El árbol se desarrolla por completo y luego se poda. Dado un árbol máximal (final) de $N$ hojas, construimos todos los subárboles posibles de $N − 1$ hojas. Para eso vamos construyendo todos los árboles a los que eliminamos pares de nodos hijo. Calculamos la tasa de mal clasificados para todos los subárboles y marcamos el que obtenga una menor tasa de mal clasificados.
 
 ### Librerías necesarias
 
@@ -3036,6 +3129,123 @@ saveRDS(predicted, file = "./outputs/tree_preds.rds")
 
 ### Teoría del modelo
 
+El algoritmo **K-Nearest Neighbors (KNN)** está fundamentado matemáticamente en medidas de proximidad y votación por mayoría o promedio, sin asumir una distribución subyacente de los datos.
+
+Podemos destacar varias partes clave en KNN:
+
+- **Número de vecinos**: Es el parámetro K en KNN y representa cuántos puntos cercanos del conjunto de entrenamiento se consideran para decidir la clase o el valor de un nuevo dato. Por ejemplo, si k = 3, se toman en cuenta los 3 vecinos más próximos para la predicción
+
+- **Definición de entorno cercano**: Es el conjunto de los k puntos más próximos al dato a clasificar o predecir, determinados mediante una medida de distancia en el espacio de características.
+
+- **Ponderación**: Nos permite asignar diferentes influencias a los puntos que consideramos vecinos.
+
+[**Los problemas de KNN pueden ser con o sin ponderación:**]{.hl-bluepastel}
+
+- **Sin ponderar**: Para cada individuo su clasificación será asignada como la moda de sus k-vecinos más cercanos.
+
+- **Con ponderación**: para cada individuo, su clasificación será asignada como la moda ponderada de sus k-vecinos más cercanos, por ejemplo tomando como peso el inverso de la distancia (cuánto más cerca, más pesa).
+
+#### Formulación de KNN
+
+Mátematicamente el algoritmo KNN queda representado de la siguiente manera:
+
+Dado un registo $x_{i}=\{x_{i1}, x_{i2}, ..., x_{ip} \}$, un número $k$ de vecinos y una métrica $d()$, la probabilidad de $y_{i}$ a la clase $j$ será:
+
+$$
+P(y_{i}=j | X = x_{i})=\frac{1}{k}\sum_{l=1}^{k}w_{l} I\left( y_{l}=j\right)
+$$
+
+donde $x_{l}$, con $l = 1,...,k$ son los k-vecinos más cercanos en función de $d()$ y $w_{l}$ es el peso del vecino $l$-ésimo, pudiendo ser todos 1 si no ponderamos o $w_{l}=\frac{1}{d(x_{i},x_{l})}$.
+
+En el caso de nuestro problema de abandono laboral voluntario, al tratarse de una clasificación binaria, el problema es más sencillo ya que la **probabilidad de** $y_{i}$ es 1.
+
+$$
+P(y_{i}=1 | X = x_{i})=\frac{1}{k}\sum_{l=1}^{k}w_{l} I\left( y_{l}=1\right)
+$$
+y la **probabilidad de** $y_{i}$ de ser 0 será su complementario, es decir:
+
+$$
+P(y_{i}=0 | X = x_{i}) = 1- P(y_{i}=1 | X = x_{i})
+$$
+
+La **clase predicha** será aquella cuya probabilidad sea mayor.
+
+#### Número de vecinos
+
+-   **Pocos vecinos**: regla de decisión extremadamente flexible, creando incluso «islas» de un solo individuo. **Poco sesgo y enorme varianza** (con un dato nuevo que tuviéramos, ya cambiaría todo). Se tiende al *overfitting*.
+
+-   **Muchos vecinos**: regla de decisión extremadamente rígida. **Mucho sesgo y poca varianza**.
+
+#### Distancia
+
+##### Distancias geométricas
+
+Al utilizar distancias geométricas debemos reescalar o estandarizar por rango, de forma que todas las variables estén en un rango común.
+
+$$\tilde{x}_{i,j} = \frac{x_{i,j} - min(x_j)}{max(x_j) - min(x_j)}$$
+
+###### Distancia Euclídea
+
+Es la distancia que se emplea de forma habitual en KNN.
+
+En plano se define como:
+
+$$d(x,y)= \sqrt{(x_{1}-y_{1})^{2}+(x_{2}-y_{2})^{2}}$$
+
+En el caso general en el que tenemos $p$ variables predictoras numéricas se calculará como:
+
+$$d(x,y)= \sqrt{\sum_{j=1}^{p}(x_{j}-y_{j})^{2}}$$
+
+###### Distancia Manhattan
+
+Es la distancia utilizada al caminar por la calle.
+
+En plano se define como:
+
+$$d(x,y)= |x_{1}-y_{2}|+|y_{1}-y_{2}|$$
+
+En el caso general en el que tenemos $p$ variables predictoras numéricas se calculará como:
+
+$$d(x,y)= \sqrt{\sum_{j=1}^{p}|x_{j}-y_{j}|}$$
+
+###### Distancia Chebyshev
+
+Representa los movimientos de un rey en un tablero de ajedrez por lo que también es conocida como **distancia del tablero de ajedrez**. Viene definida por la siguiente fórmula:
+
+$$d(x,y)= \max_{i}(|x_{i}-y_{i}|)$$
+
+
+Todas estas distancias geométricas son casos particulares de las conocidas como **distancias de Minkowski**, definidas en función de un parámetro $r$:
+
+$$d(x, y) = \left(\displaystyle \sum_{j=1}^{p} |x_j - y_j|^r\right)^{1/r}$$
+Cuando $p=1$ estamos ante la distancia *Manhattan*, cuando $p=2$ es la distancia *Euclídea*, cuando $p=\infty$ es la distancia de *Chebyshev*.
+
+##### Distancias probabilísticas (Mahalanobis)
+
+En el caso de las distancias probabilísticas destaca la de **Mahalanobis**, que tiene en cuenta las características probabilísticas de los datos.
+
+Una propiedad de esta distancia es su invariancia a las transformaciones lineales; es decir, si los datos se transforman linealmente, la Distancia de Mahalanobis permanece sin cambios. Esta propiedad es particularmente útil cuando se trata de conjuntos de datos que pueden sufrir escalamiento.
+
+Cuando usamos las distancias probabilísticas debemos normalizar o estandarizar por media/varianza, de forma que todas las variables tengan media 0 y desv. típica 1.
+
+$$\tilde{x}_{i,j} = \frac{x_{i,j} - \overline{x}_j}{\sigma_j}$$
+
+- **Caso bidimensional (con variables independientes)**
+
+$$d(x, y) = \sqrt{\left(\frac{x_1 - y_1}{\sigma_1} \right)^2 + \left(\frac{x_2 - y_2}{\sigma_2} \right)^2}$$
+
+- **Caso multidimensional (con variables independientes)**
+
+$$d(x, y) = \sqrt{\displaystyle \sum_{j=1}^{p} \left(\frac{x_j - y_j}{\sigma_j} \right)^2 }$$
+
+- **Caso multidimensional (con variables dependientes)**, la idea es promediar las observaciones por la **matriz de varianzas y covarianzas**.
+
+$$d(x, y) = \sqrt{\displaystyle \sum_{j=1}^{p} \left(x_j - y_j \right)^{T} \Sigma^{-1} \left(x_j - y_j \right) }$$
+
+Donde $\Sigma^{-1}$ es la **matriz de varianzas y covarianzas** (*matriz simétrica*)
+
+$$\Sigma = \begin{pmatrix} \sigma_{1}^2 & cov(x_1, x_2) & \ldots & cov(x_1, x_p) \\ cov(x_2, x_1) & \sigma_{2}^2 & \ldots & cov(x_2, x_p) \\ \vdots & \vdots & \ddots & \vdots \\ cov(x_p, x_1) & cov(x_p, x_2) & \ldots & \sigma_{p}^2 \end{pmatrix}$$
+
 ### Librerías necesarias
 
 ```{r}
@@ -3514,6 +3724,65 @@ theme_minimal()+
 
 ## SVM Support vector machine - Kernel lineal
 
+### Teoría del modelo
+
+Las **Support vector machines (SVM) lineales** buscan encontrar un hiperplano óptimo que maximice el margen entre dos clases de datos. Su formulación matemática se basa en optimización convexa con restricciones.
+
+
+A partir de un conjunto de ejemplos $S = \{(x_{1}, y_{1})...,(x_{n}, y_{n})\}$, donde $x_{i}\in \mathbb{R}^{d}$ e $y_{i}\in \{+1,-1\}$ se puede definir un [**hiperplano de separación**]{.hl-bluepastel}
+
+Este **hiperplano de separación** queda definido de la siguiente forma:
+
+$$D(x)=(w_{1}x_{1}+...+w_{d}x_{d})+b=\langle w,x \rangle + b$$
+Donde:
+
+- $\mathbf{w}$: vector de pesos (normal al hiperplano)
+
+- $b$: término de sesgo
+
+- $\mathbf{x}$: vector de características
+
+Este hiperplano debe cumplir con las siguientes características:
+
+$$\langle w,x_{i} \rangle + b\geqslant 0 \hspace{0.5cm} si\hspace{0.3cm}y_{i}=+1\hspace{0.3cm}\forall i = 1,..,n$$
+$$\langle w,x_{i} \rangle + b\leqslant 0 \hspace{0.5cm} si\hspace{0.3cm}y_{i}=-1\hspace{0.3cm}\forall i = 1,..,n$$
+No suele existir un hiperplano único para separar las dos clases por lo que surge la duda de como obtener el óptimo.
+
+Para buscar este hiperplano óptimo se introduce el concepto de margen máximo. 
+
+Es la distancia entre el hiperplano y los puntos más cercanos de cada clase (vectores soporte). Está relacionado directamente con la capacidad de generalización del hiperplano de separación.
+
+
+Por definición, los vectores de soporte siempre cumplen:
+
+$$\frac{y_{i}D(x_{i})}{\|w \|}= \tau \hspace{0.3cm}\forall i \in V_{S}$$
+En definitiva se formula como un problema cuadrático con restricciones que es abordable mediante la teoría de optimización. Esta teoría establece que un problema de optimización primal, tiene una forma dual si la función a optimizar y las restricciones son funciones estrictamente convexas. En estas circunstancias, resolver el problema dual permite obtener la solución del problema primal.
+
+$$ Min\hspace{0.3cm}  \frac{1}{2}\|w \|^{2} $$
+sujeto a
+
+$$\hspace{0.3cm} y_{i}(\langle w,x_{i} \rangle + b)\geqslant 1\hspace{0.3cm}\forall i = 1,..,n$$
+  
+Aquí, $y_i \in {-1, 1}$ son las etiquetas de clase. Las restricciones garantizan que todos los puntos estén correctamente clasificados y fuera del margen
+
+[**Como las separaciones perfectas no existen**]{.hl-bluepastel} aparecen diversas formas de resolver estos problemas, para ello se introducen las variables de relajación $\xi_i$ y un parámetro de penalización $C$.
+
+Las variables de relajación nos permite cuantificar implícitamente el número de ejemplos no-separables.
+
+Además, la suma de todas las variables de holgura, permite medir el coste asociado al número de ejemplos no-separables.
+
+Por otro lado, el parámetro de penalización permite controlar en qué grado influye el término del coste de ejemplos no-separables en la minimización de la norma, es decir, permitirá regular la tolerancia para fallar.
+
+Finalmente obtenemos:
+
+$$Min\hspace{0.3cm}  \frac{1}{2}\|w \|^{2}+C\sum_{i=1}^{n}\xi_{i}$$
+
+sujeto a $$\hspace{0.3cm} y_{i}(\langle w,x_{i} \rangle + b)\geqslant 1-\xi_{i}$$
+
+$$\xi_{i} \geqslant 0\hspace{0.3cm}\forall i = 1,..,n$$
+
+De esta forma se define el *soft margin hyperplane*
+
 ### Paquetes necesarios
 
 ```{r}
@@ -3980,6 +4249,37 @@ theme_minimal()+
 
 
 ## SVM Support vector machine - Kernel polinomial
+
+### Teoría del modelo
+
+Las **SVM** con **kernel polinomial** extienden el SVM lineal para capturar relaciones no lineales mediante una transformación polinomial de los datos. Su formulación matemática se basa en funciones kernel que calculan similitudes en un espacio de características de mayor dimensión.
+
+#### Kernel polinomial
+
+El kernel se define como:
+
+$$K_{P}(x,x^{'})= \left[ \gamma< x, x^{'}> +\tau \right]^{p}\hspace{0.6cm}\gamma>0$$
+
+- $\gamma$ Controla la escala del producto escalar. Valores altos amplifican las diferencias entre vectores.
+
+- $p$: Grado del polinomio (controla la complejidad del modelo).
+
+- $\tau$: Término constante (ajusta la influencia de términos de orden superior).
+
+El kernel mapea implícitamente los datos a un espacio de mayor dimensión donde son linealmente separables.
+
+$$
+\Phi(\mathbf{x}) = \left[
+\sqrt{2\gamma} x_1, 
+\sqrt{2\gamma} x_2,
+\gamma x_1^2,
+\gamma x_2^2,
+\sqrt{2\gamma^2} x_1x_2,
+\sqrt{\tau}
+\right]
+$$
+
+### SVM Polinomial
 
 En este modelo de support vector machine con un kernel polinomial podemos reutilizar diferentes partes de nuestro modelo de kernel lineal.
 
@@ -4534,6 +4834,220 @@ theme_minimal()+
 ```
 
 ## Red neuronal
+
+### Teoría del modelo
+
+Las **redes neuronales arificiales** son modelos computacionales inspirados en redes biológicas, estructurados en capas interconectadas de neuronas artificiales. Su funcionamiento se basa en operaciones algebraicas, funciones de activación no lineales y optimización mediante gradientes.
+
+- Las entradas $x_{i}$ representan las señales que vienen de otras neuronas y que son capturadas por las dendritas.
+
+- Los pesos $w_{i}$ son la intensidad de la sinapsis que conecta dos neuronas.
+
+- $\theta$ hace referencia a la función umbral que la neurona tiene que sobrepasar para activarse.
+Cada señal de entrada pasa a través de una ganancia o peso. Los pesos pueden ser positivos o negativos.
+
+- El nodo sumatorio acumula todas las señales de entradas multiplicadas por los pesos y las transfiere a la salida a través de una función umbral.
+
+El objetivo es extraer las combinaciones lineales de las variables de entrada como características derivadas y, a continuación, modelar el objetivo como una función no lineal de estas características.
+
+#### Red de una sola neurona
+
+Se trata de una combinacion lineal entre las entradas y los pesos. Los pesos de cada una de las entradas indican cuánto influye cada variable de entrada en la neurona.
+
+Además en esta combinación lineal encontramos el término independiente que representará el sesgo.
+
+$$\sum_{i=1}^{n}w_ix_i+b$$
+
+Esta combinación lineal simple utilizando una única neurona no nos sirve para muchos tipos de problemas en los que nuestros datos son algo más complejos por lo que son necesarias añadir neuronas (cada una con sus pesos y bias).
+
+#### Red neuronal con varias neuronas
+
+En caso de combinar varias neuronas, con diferentes entradas y pesos obtendremos un resultado de cada una de estas neuronas, con este resultado de cada una de las neuronas iremos realizando nuevas combinaciones hasta en nuestro caso (clasificación binaria) quedarnos únicamente con una neurona de salida que nos proporcione la predicción:
+
+$$
+Z = g \left( W_{13} (W_{11}X_1 + W_{21}X_2 + b_1)+ W_{23}(W_{12}X_1 + W_{22}X_2 + b_2) + b_3 \right)
+$$
+Sin embargo, la combinación de estas múltiples combinaciones lineales equivale a hacer una única regresión lineal por lo que no estaríamos consiguiendo nada nuevo que aplicando una sola neurona.
+
+Para solucionar este problema aparecen las funciones de activación que se encargan de calcular el estado de actividad de una neurona, convirtiendo la entrada global en un valor de activación, cuyo rango normalmente va de 0 a 1 ó de -1 a 1.
+
+Gracias a esto se consigue evitar el problema de colapso por la linealidad.
+
+
+$$
+Z = g \left( W_{13} \cdot f \left( W_{11}X_1 + W_{21}X_2 + b_1 \right) + W_{23} \cdot f \left( W_{12}X_1 + W_{22}X_2 + b_2 \right) + b_3 \right)
+$$
+
+#### Funciones de activación
+
+- **Sigmoide**: 
+
+$$
+f(z)=\frac{1}{1+e^{-z}}
+$$
+
+Tiene una gran desventaja y es que cuando las entradas se vuelven pequeñas o grandes, la función se concentra en 0 o 1, obteniendo una derivada cercana a 0. Esto hace que no tenga gradiente a propagarse a través de la red, por lo que casi no queda nada para las capas inferiores.
+
+- **Softmax**: Es la forma más generalizada de la función de activación sigmoide. Se utiliza en problemas de clasificación de múltiples clases. Similar a la sigmoide, los elementos del vector de salida están en el rango 0 - 1, la diferencia es que su suma es igual a 1. Se utiliza como capa final en los modelos de clasificación.
+
+$$
+S(y_{i})=\frac{e^{y_{i}}}{\sum_{j}e^{y_{j}}}
+$$
+
+- **Tangente hiperbólica**:
+
+$$f(z)=\frac{e^{z}-e^{-z}}{e^{z}+e^{-z}}$$
+
+- **ReLU**: Es la función de activación más utilizada en el aprendizaje profundo.
+
+$$ReLU(z)=max(0,z)$$
+
+Su desventaja principal reside en su salida de 0 para cualquier valor negativo, lo cual puede generar nodos inutilizables. En algunos casos, puede ocurrir que la mitad de las neuronas de la red estén muertas.
+
+#### Funcionamiento de la Red
+
+Se definen una serie de inputs y de número de neuronas, ejemplificando serán 4 de cada.
+
+En cada una de estas neuronas se lleva a cabo una combinación lineal de las variables de entrada
+
+$$
+N_{1}\hspace{0.3cm}\rightarrow \hspace{0.3cm}N_{1}=W_{11}X_{1}+W_{21}X_{2}+W_{31}X_{3}+W_{41}X_{4}+b_{1}
+$$
+
+$$
+N_{2}\hspace{0.3cm}\rightarrow \hspace{0.3cm}N_{2}=W_{12}X_{1}+W_{22}X_{2}+W_{32}X_{3}+W_{42}X_{4}+b_{2}
+$$ $$
+N_{3}\hspace{0.3cm}\rightarrow \hspace{0.3cm}N_{3}=W_{13}X_{1}+W_{23}X_{2}+W_{33}X_{3}+W_{43}X_{4}+b_{3}
+$$
+
+$$
+N_{4}\hspace{0.3cm}\rightarrow \hspace{0.3cm}N_{4}=W_{14}X_{1}+W_{24}X_{2}+W_{34}X_{3}+W_{44}X_{4}+b_{4}
+$$
+
+Una vez realizadas las combinaciones lineales hay que eliminar el problema de colinealidad mediante el empleo de una función de activación. Para este ejemplo usaremos la función ReLU:
+
+$$
+N{1}\hspace{0.3cm}\rightarrow \hspace{0.3cm}N_{1}=ReLU\left(W_{11}X_{1}+W_{21}X_{2}+W_{31}X_{3}+W_{41}X_{4}+b_{1}\right)
+$$
+
+$$
+N{2}\hspace{0.3cm}\rightarrow \hspace{0.3cm}N_{2}=ReLU\left(W_{12}X_{1}+W_{22}X_{2}+W_{32}X_{3}+W_{42}X_{4}+b_{2}\right)
+$$
+
+$$
+N_{3}\hspace{0.3cm}\rightarrow \hspace{0.3cm}N_{3}=ReLU\left(W_{13}X_{1}+W_{23}X_{2}+W_{33}X_{3}+W_{43}X_{4}+b_{3}\right)
+$$
+
+$$
+N_{4}\hspace{0.3cm}\rightarrow \hspace{0.3cm}N_{4}=ReLU\left(W_{14}X_{1}+W_{24}X_{2}+W_{34}X_{3}+W_{44}X_{4}+b_{4}\right)
+$$
+
+Después a cada una de las salidas de estas neuronas le aplicaremos de nuevo otra combinación lineal. Además en nuestro caso, al tratarse de un problema de clasificación binaria en el que tenemos que detectar si hay o no abandono laboral, tendremos que aplicar de nuevo otra función de activación.
+
+De forma simplificada obtendremos la siguiente expresión que nos proporcionará le predicción de la salida!
+
+$$Y = ReLU\left(W_{1,out}N_{1}+W_{2,out}N_{2}+W_{3,out}N_{3}+W_{4,out}N_{4}+b_{out}\right)$$
+Nuestro objetivo en la red neuronal es encontrar la combinación de parámetros que nos proporcione el menor error posible, más concretamente estimar los valores de $b$ y $w$. 
+
+Es decir que queremos resolver un problema de optimización aplicado a nuestra red previa:
+
+$$
+\min_{w_{ij}} \hspace{0.4cm} \sum_{i=1}^{n}\left(y_{i}-\hat{y_{i}}\right)^{2}
+$$
+
+Donde $y_i$ es la salida predicha y $\hat{y}_i$ es el valor real para cada instancia $i$ del conjunto de entrenamiento con $N$ muestras
+
+Que sustituyendo queda de la siguiente forma:
+
+$$
+\min_{w_{ij}}\sum_{i=1}^{n}\left(   y_{i}- ReLU  \left[   W_{1,out}ReLU(w_{11}x_{1i}+...) +W_{2,out}ReLU(w_{21}x_{1i}+...)     \right]         \right)^{2}
+$$
+[**Algoritmo de descenso de gradiente**]{.hl-bluepastel}
+
+El objetivo es encontrar los valores óptimos de todos los pesos ($W_{11}$, $W_{12}$, $W_{21}$, $W_{22}$, $W_{13}$, $W_{23}$) y sesgos ($b_1$, $b_2$, $b_3$) que minimicen la función de pérdida. Para esto:
+
+- Inicializamos los pesos y sesgos con valores aleatorios (generalmente cerca de cero).
+- Se elige un punto $x_0$ de partida de manera aleatoria
+- Se calcula el gradiente en ese punto
+- Se determina el siguiente punto de acuerdo con $x_{n+1}=x_{n}-\lambda\nabla f(x_{n})$
+- Se detiene el algoritmo tras un numero de iteraciones prefijado
+
+El valor de $\lambda$ representa el learning rate que es un hiperparámetro que controla cuánto ajusta un modelo sus parámetros en cada paso.
+
+[**Backpropagation**]{.hl-bluepastel}
+
+Es un algoritmo que se emplea para entrenar redes neuronales artificiales con el objetivo de minimizar los errores en el proceso de aprendizaje automático de una máquina, basado en el Gradient Descent
+
+En general este algoritmo se divide en 4 etapas.En una red neuronal simple se vería de la siguiente forma:
+
+**Forward pass**
+
+Calcular activaciones desde la entrada hasta la salida
+
+$$
+\begin{align*}
+z^{(1)} &= W^{(1)}x + b^{(1)} \\
+a^{(1)} &= ReLU(z^{(1)}) \\
+z^{(2)} &= W^{(2)}a^{(1)} + b^{(2)} \\
+\hat{y} &= ReLU(z^{(2)})
+\end{align*}
+$$
+
+**Loss**
+
+Comparar la predicción con la etiqueta real
+
+$$
+\begin{equation*}
+\mathcal{L} = \frac{1}{2}(\hat{y} - y)^2
+\end{equation*}
+$$
+
+**Backward pass**
+
+Derivada del error en la capa de salida:
+
+
+$$
+\begin{equation*}
+\delta^{(2)} = (\hat{y} - y) \cdot ReLU'(z^{(2)})
+\end{equation*}
+$$
+
+Gradiente respecto a los pesos de la capa de salida:
+
+$$
+\begin{equation*}
+\frac{\partial \mathcal{L}}{\partial W^{(2)}} = \delta^{(2)} \cdot a^{(1)T}
+\end{equation*}
+$$
+
+Propagación del error hacia la capa oculta:
+
+$$
+\begin{equation*}
+\delta^{(1)} = \left(W^{(2)T} \delta^{(2)}\right) \cdot \sigma'(z^{(1)})
+\end{equation*}
+$$
+
+Gradiente respecto a los pesos de la capa oculta:
+
+$$
+\begin{equation*}
+\frac{\partial \mathcal{L}}{\partial W^{(1)}} = \delta^{(1)} \cdot x^T
+\end{equation*}
+$$
+
+**Update**
+
+Ajustar pesos con el gradiente descendente
+
+$$
+\begin{align*}
+W^{(2)} &\leftarrow W^{(2)} - \eta \cdot \frac{\partial \mathcal{L}}{\partial W^{(2)}} \\
+W^{(1)} &\leftarrow W^{(1)} - \eta \cdot \frac{\partial \mathcal{L}}{\partial W^{(1)}}
+\end{align*}
+$$
 
 ### Librerías necesarias
 
@@ -5213,6 +5727,41 @@ theme_minimal()+
 
 ## Ensamble - Bagging con Random Forest
 
+### Teoría del modelo
+
+Un **Random Forest** es un conjunto de árboles de decisión entrenados de forma aleatoria (un ensamble). Cada árbol se entrena con una **muestra aleatoria del dataset** y vota su predicción. La predicción final se obtiene por mayoría (**clasificación**) o media (**regresión**).
+
+Para un conjunto de datos con $N$ observaciones, se generan $B$ muestras bootstrap (con reemplazo) de tamaño $N$.
+
+Sea $\Omega$ la muestra original. Para cada $b = 1,...,B$, se toma una muestra bootstrap $\Omega_b$.
+
+La probabilidad de que una observación aparezca en la muestra bootstrap es:
+$$P(\Omega_b) = 1 − ( 1 − \frac{1}{n})^n ≈ 0.632$$
+Para cada muestra bootstrap $\Omega_b$, se construye un árbol completo sin podar de la siguiente forma:
+
+- En cada nodo, seleccionar aleatoriamente m variables de las M totales (m < M)
+- Para cada variable k de las m seleccionadas, encontrar la mejor división $s_k$
+- Elegir la mejor división $s^*$ entre todas las $s_k$ posibles
+- Dividir el nodo según esta regla de decisión
+
+Por último se combinan los $B$ árboles para formar el modelo final.
+
+- Para clasificación: se usa votación mayoritaria
+
+$$
+\hat{y} = \mathrm{mode} \left( \left\{ h_b(\mathbf{x}) \right\}_{b=1}^B \right)
+$$
+
+
+- Para regresión: promedio de las predicciones
+
+$$
+\hat{y} = \frac{1}{B} \sum_{b=1}^{B} h_b(\mathbf{x})
+$$
+
+
+### Random Forest
+
 Como método de ensamble vamos a utilizar el Bagging, más concretamente un Random Forest que se trata de una modificación del bagging que consiste en incorporar aleatoriedad en las variables utilizadas para segmentar cada nodo del árbol.
 
 ### Librerías necesarias
@@ -5631,7 +6180,7 @@ statistics <- data.frame (metrics  = c("accuracy","sensitivity","specificity","a
 knitr::kable(statistics , col.names = gsub("[.]", " ", names(statistics)))
 ```
 
-Como ya se mencionó anteriormente se ha conseguido mantener unas métricas correctas en general y tener una buena sensibilidad respecto a la de nuestro entrenamiento por lo que podemos asegurar que hemos conseguido reducir el overfitting de nuestro modelo cuando probamos oversampling.
+Como ya se mencionó anteriormente se ha conseguido mantener unas métricas correctas en general y tener una buena sensibilidad respecto a la de nuestro entrenamiento por lo que podemos asegurar que hemos conseguido reducir el overfitting de nuestro modelo original al que aplicamos oversampling.
 
 ```{r}
 #| message: false
