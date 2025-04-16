@@ -4881,11 +4881,13 @@ knitr::kable(statistics , col.names = gsub("[.]", " ", names(statistics)))
 ```
 
 
-### Overfitting y reentrenamiento del modelo
+### Overfitting
 
-Se vuelve a observar overfitting en el modelo. Esto es debido al tamaño reducido del dataset y el uso de muchas iteraciones sin dropout y con bastantes nodos. 
+Se observa overfitting en el modelo. Esto es debido al tamaño reducido del dataset y el uso de muchas iteraciones sin dropout y con bastantes nodos. 
 
 Todos estos factores han favorecido que el modelo memorice los datos de entrenamiento en lugar de generalizar correctamente.
+
+Además al hacer oversampling, nuestro modelo está duplicando datos ya existentes en el dataset por lo que esto puede ser otro factor muy influyente.
 
 Para solucionar este problema vamos a crear un nuevo grid de hiperparámetros con algunos valores diferentes y reentrenar la red.
 
@@ -4915,6 +4917,8 @@ Además vamos a considerar únicamente dropouts que desactiven bastante cantidad
 
 Por otro lado se va a conservar el valor del hiperparámetro del learning rate del modelo ganador que estaba sobreajustado.
 
+### Reentrenamiento
+
 ```{r}
 #| warning: false
 #| message: false
@@ -4937,6 +4941,7 @@ Me acabo de dar cuenta que he sobreescrito el archivo anterior del modelo sobrea
 knitr::include_graphics("./img/sad.jpg")
 ```
 
+Visualizamos las métricas y las gráficas del modelo reentrenado con los cambios mencionados anteriormente:
 
 ```{r}
 #| warning: false
@@ -4976,7 +4981,7 @@ cv_results_group <- cv_results |> group_by(model) |>  summarise(accuracy = mean(
                                                                  spec = mean(spec),
                                                                  auc = mean(roc_auc)
                                                                  ) |>  
-                                    arrange(desc(sensitivity)) |>   
+                                    arrange(desc(sens)) |>   
                                     slice_head(n = 15) |>
                                     mutate(orden = as.factor(seq(from = 1, to=n(), by=1))) |>
                                     select(model, orden)
@@ -5208,6 +5213,8 @@ theme_minimal()+
 
 ## Ensamble - Bagging con Random Forest
 
+Como método de ensamble vamos a utilizar el Bagging, más concretamente un Random Forest que se trata de una modificación del bagging que consiste en incorporar aleatoriedad en las variables utilizadas para segmentar cada nodo del árbol.
+
 ### Librerías necesarias
 
 ```{r}
@@ -5296,9 +5303,9 @@ attrition_test <- testing(attrition_split)
 
 ### Downsampling
 
-En este caso hemos elegido realizar downsampling debido a que mediante oversampling no se consiguió solucionar el problema del overfitting.
+En este caso hemos elegido realizar downsampling debido a que mediante oversampling no se consiguió solucionar el problema del overfitting que presentaba inicialmente el modelo.
 
-Como resultado se verán un poco sacrificadas otras métricas en este modelo pero vamos a conseguir buenos resultados por lo general.
+Como resultado se verán un poco sacrificadas otras métricas pero vamos a conseguir buenos resultados por lo general.
 
 ```{r}
 #| warning: false
@@ -5309,6 +5316,8 @@ attrition_train_balance <- ovun.sample(attrition ~ .,
                                    seed = 200900,
                                    method = "under")$data
 ```
+
+La distribución de nuestros datos después de realizar el **downsampling** queda de la siguiente forma:
 
 ```{r}
 #| message: false
@@ -5383,7 +5392,6 @@ El número de árboles tomará valores de 200 o 500, cuantos más haya será má
 En cuanto al número de variables a muestrear, en nuestro caso, tenemos 19 variables en el dataset y dentro de los modelos Random Forest muchas veces definen este valor la raíz del número total de variables, es decir en nuestro caso aproximadamente 4. Vamos a asignar también unos valores un poco más bajos y altos para realizar la prueba.
 
 Por último, el tamaño de los nodos es reducido ya que el conjunto de datos también lo es pero no queremos que sea muy reducido para evitar sobreajuste.
-
 
 ### Entrenamiento
 
@@ -5505,6 +5513,8 @@ saveRDS(cv_results, file = "./outputs/rf_cv_results.rds")
 
 ```
 
+Las métricas de nuestros modelos de Random Forest entrenados son las siguientes:
+
 ```{r}
 #| message: false
 #| warning: false
@@ -5545,6 +5555,8 @@ theme(plot.title= element_text(size=15, face = "bold" ),
 
 ```
 
+Nuestro 🏆 **modelo ganador** 🏆 será el que tiene **Tamaño de nodo: 30 - Tamaño de muestreo: 100 - Nº de variables a muestrear: 6 - Nº de árboles: 100**.
+
 ### Modelo ganador
 
 ```{r}
@@ -5564,6 +5576,8 @@ best_rf_model <- randomForest(attrition ~ .,
 # Guardar modelo
 saveRDS(best_rf_model, file = "./outputs/best_rf_model.rds")
 ```
+
+Graficamos la importancia de las variables:
 
 ```{r}
 #| message: false
@@ -5587,6 +5601,8 @@ theme(axis.title.x = element_blank(),
       legend.position = "None"
       ) 
 ```
+
+Donde podemos ver que la variable overtime destaca sobre las demás.
 
 ### Predicciones en test
 
@@ -5729,3 +5745,17 @@ theme_minimal()+
       plot.title = element_text(size =15,face="bold"),
       plot.subtitle = element_text(size  =10))
 ```
+
+
+Analizando estos gráficos finales en los que podemos observar las comparaciones de las métricas de los distintos modelos podemos extraer una serie de conclusiones finales:
+
+En cuanto al **rendimiento de los modelos** existen 3 modelos que destacan sobre los demás, estos son los dos de SVM y la Red Neuronal, mantienen unas métricas generales muy buenas.
+
+Por la propia definición de nuestro problema del abandono laboral, la métrica que más nos interesa es la **sensibilidad** y es que con esta seremos capaces de predecir de forma correcta aquella gente que abandona el trabajo de forma voluntaria. Fallar en identificar a un empleado que abandonará (falso negativo) generalmente tiene un coste mayor que intervenir innecesariamente con un empleado que no planeaba abandonar (falso positivo). 
+
+Los modelos que mejor sensibilidad tienen son los dos de **SVM** pero destaca sobre todo el que utiliza el **kernel polinomial**.
+
+Viendo que la sensibilidad respecto al resto sí que varía bastante y, además, el resto de métricas de SVM Polinomial son buenas, esta podría ser la mejor opción para nuestro problema. Por tanto, ese modelo sería mi elección. 😋
+
+En cuanto a las variables de nuestro conjunto de datos dentro de los modelos en los que se ha analizado la importancia de las variables, se ha visto como **overtime** es la variable que más afectaba para que se produjese el abandono laboral, por lo que esto puede aportar mucha información para tratar de controlar este abandono voluntario del empleo.
+
